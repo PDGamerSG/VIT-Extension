@@ -163,6 +163,11 @@ chrome.webRequest.onCompleted.addListener(
     } else if (link.indexOf("menu.js") !== -1 || link.indexOf("home") !== -1) {
       if (link.indexOf("menu.js") !== -1) await sleep(500);
       returnMessage("nav_bar_change");
+      // Also trigger dashboard customization when navigating home
+      if (link.indexOf("home") !== -1) {
+        await sleep(500);
+        returnMessage("dashboard");
+      }
     } else if (link.indexOf("processViewStudentCourseDetail") !== -1) {
       returnMessage("course_page_change");
     } else if (

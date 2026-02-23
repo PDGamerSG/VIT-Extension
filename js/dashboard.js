@@ -10,7 +10,7 @@
     const TOGGLE_ID = "vit-ext-cgpa-toggle";
 
     const customizeDashboard = () => {
-        // Prevent double-injection
+        // Prevent double-injection within the same page load
         if (document.getElementById(MARKER_ID)) return;
 
         const cgpaCard = findCardByTitle("CGPA and CREDIT Status");
@@ -18,14 +18,14 @@
 
         if (!cgpaCard && !proctorCard) return; // Dashboard not loaded yet
 
-        // Mark as done
+        // Place marker INSIDE #b5-pagewrapper so it's cleared on SPA navigation
+        const pageWrapper = document.getElementById("b5-pagewrapper");
         const marker = document.createElement("div");
         marker.id = MARKER_ID;
         marker.style.display = "none";
-        document.body.appendChild(marker);
+        (pageWrapper || document.body).appendChild(marker);
 
-        // Disconnect observer now that we're done
-        if (observer) observer.disconnect();
+        // Note: persistent observer keeps running — deduplication is handled by the marker
 
         // ── Global Aesthetic Upgrades ──
         const vitExtStyle = document.getElementById("vit-ext-dashboard-styles") || document.createElement("style");
@@ -47,6 +47,51 @@
             .primaryBorderTop {
                 border-top: none !important;
             }
+            /* Reduce top gap between navbar and content */
+            .content-wrapper, section.content, #page-wrapper {
+                padding-top: 0px !important;
+                margin-top: 0 !important;
+            }
+            .breadcrumb, .nav-breadcrumb {
+                margin-bottom: 2px !important;
+                padding-top: 0px !important;
+                padding-bottom: 0px !important;
+            }
+            .container-fluid {
+                padding-top: 0 !important;
+            }
+            /* Tighten the gap between quick-links bar and cards */
+            .row:first-child, .content > .row:first-child {
+                margin-top: 0 !important;
+            }
+            section.content > .container-fluid > .row {
+                margin-top: 0 !important;
+            }
+            /* Reduce padding on dashboard main row container */
+            #b5-pagewrapper > .row {
+                padding-top: 4px !important;
+                padding-left: 16px !important;
+                padding-right: 16px !important;
+            }
+            @media (min-width: 992px) {
+                #b5-pagewrapper > .row {
+                    padding-left: 24px !important;
+                    padding-right: 24px !important;
+                }
+            }
+            #b5-pagewrapper {
+                margin-bottom: 0 !important;
+            }
+            /* Clean up semester text (WINSEM...) */
+            .bg-warning, [style*="background-color: yellow"], [style*="background: yellow"] {
+                background-color: transparent !important;
+                background: transparent !important;
+                box-shadow: none !important;
+                border: none !important;
+            }
+            .text-black, [style*="color: black"] {
+                color: inherit !important;
+            }
         `;
         if (!vitExtStyle.parentElement) document.head.appendChild(vitExtStyle);
 
@@ -61,6 +106,27 @@
                 courseBody.style.height = "auto";
             }
         }
+
+        // ── 0.1 Clean up Semester Text (WINSEM...) ──
+        const semesterTextEls = [...document.querySelectorAll('span, b, div')].filter(el =>
+            el.textContent.includes('WINSEM') && el.children.length === 0
+        );
+        semesterTextEls.forEach(el => {
+            el.style.backgroundColor = 'transparent';
+            el.style.background = 'transparent';
+            el.style.boxShadow = 'none';
+            el.style.border = 'none';
+            el.classList.remove('bg-warning', 'text-black', 'badge', 'bg-dark');
+            el.classList.add('fontcolor3', 'fw-bold');
+
+            // Also check parent if it's a small box
+            const parent = el.parentElement;
+            if (parent && (parent.classList.contains('bg-dark') || getComputedStyle(parent).backgroundColor === 'rgb(0, 0, 0)')) {
+                parent.style.backgroundColor = 'transparent';
+                parent.style.background = 'transparent';
+                parent.style.boxShadow = 'none';
+            }
+        });
 
         // ── 1. Remove Action Plan - Academic Performance card ──
         const actionPlanH5 = Array.from(document.querySelectorAll("h5.card-title")).find(
@@ -146,6 +212,59 @@
         if (daCard && proctorCard) {
             // Move proctor card after the DA card
             daCard.insertAdjacentElement("afterend", proctorCard);
+        }
+
+        // ── 6. Remove '<' text from Digital Assignments card ──
+        const cleanDaSymbols = (container) => {
+            if (!container) return;
+            // Walk through ALL text nodes and remove bare '<' text
+            const walker = document.createTreeWalker(container, NodeFilter.SHOW_TEXT, null);
+            const toRemove = [];
+            while (walker.nextNode()) {
+                const txt = walker.currentNode.textContent.trim();
+                if (txt === '<' || txt === '<<' || txt === '< <') {
+                    toRemove.push(walker.currentNode);
+                }
+            }
+            toRemove.forEach(node => node.remove());
+
+            // Also handle elements that only contain '<' characters
+            const allEls = container.querySelectorAll('*');
+            allEls.forEach(el => {
+                if (el.children.length === 0) {
+                    const t = el.textContent.trim();
+                    if (t === '<' || t === '<<') {
+                        el.style.display = 'none';
+                    }
+                }
+            });
+        };
+
+        // Clean now (in case content is already loaded)
+        if (daCard) cleanDaSymbols(daCard);
+
+        // Also observe #digital-assignments for dynamic content loading (AJAX)
+        const daDiv = document.getElementById('digital-assignments');
+        if (daDiv) {
+            const daObserver = new MutationObserver(() => {
+                cleanDaSymbols(daDiv);
+                daObserver.disconnect();
+            });
+            daObserver.observe(daDiv, { childList: true, subtree: true });
+        }
+
+        // ── 7. Tighten gap between navbar and content ──
+        const wrapperEl = document.getElementById('b5-pagewrapper');
+        if (wrapperEl) {
+            const mainRow = wrapperEl.querySelector(':scope > .row');
+            if (mainRow) {
+                // Only reduce top padding, keep symmetrical side padding
+                mainRow.classList.remove('p-1', 'p-md-2', 'p-lg-3');
+                mainRow.style.paddingTop = '4px';
+                mainRow.style.paddingBottom = '16px';
+                mainRow.style.paddingLeft = '16px';
+                mainRow.style.paddingRight = '16px';
+            }
         }
     };
 
@@ -353,33 +472,66 @@
     const noMsgHtml = (text) =>
         `<div style="padding:12px;color:#6c757d;text-align:center;font-size:13px;">${text}</div>`;
 
+    // ── Re-apply logic: remove old marker so customizeDashboard can re-run ──
+    const resetAndApply = () => {
+        // Remove old marker (it may have been destroyed by SPA navigation already)
+        const oldMarker = document.getElementById(MARKER_ID);
+        if (oldMarker) oldMarker.remove();
+
+        // Also remove old injected class messages card to avoid duplicates
+        const oldMsgBody = document.getElementById("vit-ext-class-messages");
+        if (oldMsgBody) {
+            const oldMsgCard = oldMsgBody.closest(".card");
+            if (oldMsgCard) oldMsgCard.remove();
+        }
+
+        // Remove old toggle button to avoid duplicates
+        const oldToggle = document.getElementById(TOGGLE_ID);
+        if (oldToggle) oldToggle.remove();
+
+        // Try immediately, then retry a few times for AJAX content
+        requestAnimationFrame(() => {
+            try { customizeDashboard(); } catch (_) { }
+        });
+        setTimeout(() => { try { customizeDashboard(); } catch (_) { } }, 300);
+        setTimeout(() => { try { customizeDashboard(); } catch (_) { } }, 600);
+        setTimeout(() => { try { customizeDashboard(); } catch (_) { } }, 1200);
+        setTimeout(() => { try { customizeDashboard(); } catch (_) { } }, 2000);
+        setTimeout(() => { try { customizeDashboard(); } catch (_) { } }, 3000);
+    };
+
     // ── Message listener ──
     chrome.runtime.onMessage.addListener((request) => {
-        if (request.message === "dashboard") {
-            // Try quickly first, then retry if content not loaded yet
-            requestAnimationFrame(() => {
-                try { customizeDashboard(); } catch (_) { }
-            });
-            setTimeout(() => {
-                try { customizeDashboard(); } catch (_) { }
-            }, 600);
+        if (request.message === "dashboard" || request.message === "nav_bar_change") {
+            // Small delay to let VTOP inject the dashboard HTML first
+            setTimeout(() => resetAndApply(), 200);
         }
     });
 
-    // Debounced observer for dynamic content loading
+    // ── Persistent observer: watches for dashboard elements appearing ──
+    // This NEVER disconnects, so it catches SPA navigation back to dashboard
     let debounceTimer = null;
-    const observer = new MutationObserver(() => {
-        if (document.getElementById(MARKER_ID)) {
-            observer.disconnect();
-            return;
-        }
-        if (document.getElementById("last-five-feedbacks") || document.getElementById("edu-status")) {
+    const persistentObserver = new MutationObserver(() => {
+        // If marker exists, dashboard is already customized — do nothing
+        if (document.getElementById(MARKER_ID)) return;
+
+        // Check if dashboard-specific elements are in the DOM
+        const hasDashboard = document.getElementById("edu-status") ||
+            document.getElementById("course-data") ||
+            document.getElementById("last-five-feedbacks") ||
+            document.getElementById("proctor-message") ||
+            document.getElementById("digital-assignments");
+
+        if (hasDashboard) {
             if (debounceTimer) clearTimeout(debounceTimer);
             debounceTimer = setTimeout(() => {
-                try { customizeDashboard(); } catch (_) { }
-            }, 150);
+                // Double-check marker hasn't been set in the meantime
+                if (!document.getElementById(MARKER_ID)) {
+                    try { customizeDashboard(); } catch (_) { }
+                }
+            }, 200);
         }
     });
 
-    observer.observe(document.body, { childList: true, subtree: true });
+    persistentObserver.observe(document.body, { childList: true, subtree: true });
 })();

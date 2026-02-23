@@ -108,7 +108,7 @@ const download_files = (type) => {
     link_data: all_links,
     course: course,
     faculty_slot: faculty_slot,
-    module_wise : moduleWise,
+    module_wise: moduleWise,
   });
 };
 
@@ -223,7 +223,7 @@ const modify_page = () => {
 
     toggleWrapper.appendChild(toggleLabel);
     toggleWrapper.appendChild(toggleCheckbox);
-    targetElement.insertBefore(toggleWrapper,targetElement.firstChild);
+    targetElement.insertBefore(toggleWrapper, targetElement.firstChild);
 
     toggleCheckbox.addEventListener("change", () => {
       moduleWise = toggleCheckbox.checked;
@@ -253,7 +253,7 @@ const modify_page = () => {
         link_data: [get_link_details(elem, index)],
         course,
         faculty_slot,
-        module_wise : moduleWise,
+        module_wise: moduleWise,
       });
     });
 
@@ -334,6 +334,177 @@ const modify_page = () => {
   footer.appendChild(download_selected_d);
 };
 
+// ── Semester Filter for Course Dropdown ──
+let lastActiveFilter = "all"; // Persists across re-creations
+
+const addSemesterFilter = () => {
+  const FILTER_ID = "vit-ext-semester-filter";
+  if (document.getElementById(FILTER_ID)) return;
+
+  const courseSelect = document.getElementById("courseId");
+  if (!courseSelect) return;
+
+  // Store all original options (excluding the default placeholder)
+  const allOptions = Array.from(courseSelect.options);
+  const defaultOption = allOptions.find(o => o.value === "");
+  const courseOptions = allOptions.filter(o => o.value !== "");
+
+  if (courseOptions.length === 0) return;
+
+  // Detect semesters
+  const fallOptions = courseOptions.filter(o => o.textContent.includes("Fall Semester"));
+  const winterOptions = courseOptions.filter(o => o.textContent.includes("Winter Semester"));
+
+  // Only add filter if there are multiple semesters
+  if (fallOptions.length === 0 && winterOptions.length === 0) return;
+
+  // Find insertion point
+  const fieldset = courseSelect.closest("fieldset");
+  if (!fieldset) return;
+  const legend = fieldset.querySelector("legend");
+
+  // Create filter bar
+  const filterBar = document.createElement("div");
+  filterBar.id = FILTER_ID;
+  Object.assign(filterBar.style, {
+    display: "flex",
+    alignItems: "center",
+    gap: "10px",
+    padding: "10px 12px",
+    margin: "8px 0 12px 0",
+    background: "#f8fafc",
+    borderRadius: "8px",
+    border: "1px solid #e2e8f0",
+    flexWrap: "wrap",
+  });
+
+  // Label
+  const label = document.createElement("span");
+  label.textContent = "Semester:";
+  Object.assign(label.style, {
+    fontSize: "13px",
+    fontWeight: "700",
+    color: "#1e293b",
+  });
+  filterBar.appendChild(label);
+
+  // Button creator
+  const buttons = [];
+  let activeKey = "all";
+
+  const createBtn = (text, key) => {
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.textContent = text;
+    btn.dataset.semKey = key;
+    Object.assign(btn.style, {
+      padding: "6px 18px",
+      borderRadius: "6px",
+      fontSize: "13px",
+      fontWeight: "600",
+      cursor: "pointer",
+      transition: "all 0.15s ease",
+      outline: "none",
+      border: "none",
+      background: "#e2e8f0",
+      color: "#475569",
+    });
+    btn.addEventListener("mouseenter", () => {
+      if (activeKey !== key) btn.style.background = "#cbd5e1";
+    });
+    btn.addEventListener("mouseleave", () => {
+      if (activeKey !== key) btn.style.background = "#e2e8f0";
+    });
+    btn.addEventListener("click", () => filterCourses(key));
+    filterBar.appendChild(btn);
+    buttons.push({ btn, key });
+    return btn;
+  };
+
+  const setActiveBtn = (key) => {
+    activeKey = key;
+    lastActiveFilter = key; // Persist across re-creations
+    buttons.forEach(b => {
+      if (b.key === key) {
+        b.btn.style.background = "#1d4ed8";
+        b.btn.style.color = "#fff";
+        b.btn.style.boxShadow = "0 1px 3px rgba(29,78,216,0.3)";
+      } else {
+        b.btn.style.background = "#e2e8f0";
+        b.btn.style.color = "#475569";
+        b.btn.style.boxShadow = "none";
+      }
+    });
+  };
+
+  // Create buttons
+  createBtn("All Semesters", "all");
+  if (fallOptions.length > 0) createBtn("🍂 Fall (" + fallOptions.length + ")", "fall");
+  if (winterOptions.length > 0) createBtn("❄️ Winter (" + winterOptions.length + ")", "winter");
+
+  // Count badge
+  const badge = document.createElement("span");
+  Object.assign(badge.style, {
+    marginLeft: "auto",
+    fontSize: "12px",
+    color: "#64748b",
+    fontWeight: "500",
+  });
+  badge.textContent = courseOptions.length + " total courses";
+  filterBar.appendChild(badge);
+
+  // Filter function — removes and re-adds options
+  const filterCourses = (key) => {
+    // Preserve currently selected course value
+    const selectedValue = courseSelect.value;
+
+    // Clear all options
+    while (courseSelect.options.length > 0) {
+      courseSelect.remove(0);
+    }
+
+    // Re-add default option
+    if (defaultOption) courseSelect.appendChild(defaultOption.cloneNode(true));
+
+    let filtered;
+    if (key === "fall") {
+      filtered = fallOptions;
+    } else if (key === "winter") {
+      filtered = winterOptions;
+    } else {
+      filtered = courseOptions;
+    }
+
+    // Add filtered options
+    filtered.forEach(opt => {
+      courseSelect.appendChild(opt.cloneNode(true));
+    });
+
+    // Restore selection if it exists in the newly filtered options
+    if (selectedValue && Array.from(courseSelect.options).some(o => o.value === selectedValue)) {
+      courseSelect.value = selectedValue;
+    } else {
+      courseSelect.selectedIndex = 0;
+    }
+
+    setActiveBtn(key);
+  };
+
+  // Insert after legend
+  if (legend) {
+    legend.insertAdjacentElement("afterend", filterBar);
+  } else {
+    fieldset.insertBefore(filterBar, fieldset.firstChild);
+  }
+
+  // Set initial state — restore previous filter if it was active
+  setActiveBtn(lastActiveFilter);
+  if (lastActiveFilter !== "all") {
+    filterCourses(lastActiveFilter);
+  }
+};
+
+// ── Message listener for course page modifications ──
 chrome.runtime.onMessage.addListener((request) => {
   if (request.message === "course_page_change") {
     try {
@@ -361,3 +532,20 @@ chrome.runtime.onMessage.addListener((request) => {
     }
   }
 });
+
+// ── Persistent observer to detect Course Page appearing in the DOM ──
+// This fires whenever the #courseId select element appears (initial Course Page load)
+(() => {
+  let filterDebounce = null;
+  const coursePageObserver = new MutationObserver(() => {
+    const courseSelect = document.getElementById("courseId");
+    const filterExists = document.getElementById("vit-ext-semester-filter");
+    if (courseSelect && !filterExists) {
+      if (filterDebounce) clearTimeout(filterDebounce);
+      filterDebounce = setTimeout(() => {
+        addSemesterFilter();
+      }, 300);
+    }
+  });
+  coursePageObserver.observe(document.body, { childList: true, subtree: true });
+})();
