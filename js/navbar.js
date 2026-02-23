@@ -1,5 +1,5 @@
 // ============================================================
-// ViBoot Navbar — Shortcut buttons + Dark Mode toggle
+// VTop+ Navbar — Shortcut buttons + Dark Mode toggle
 // ============================================================
 
 // ---- Dark Mode ----
@@ -23,17 +23,17 @@ const removeDarkMode = () => {
 const toggleDarkMode = () => {
 	if (isDarkModeActive) {
 		removeDarkMode();
-		chrome.storage.sync.set({ vibootDarkMode: false });
+		chrome.storage.sync.set({ vtopDarkMode: false });
 		updateDarkToggleIcon(false);
 	} else {
 		applyDarkMode();
-		chrome.storage.sync.set({ vibootDarkMode: true });
+		chrome.storage.sync.set({ vtopDarkMode: true });
 		updateDarkToggleIcon(true);
 	}
 };
 
 const updateDarkToggleIcon = (isDark) => {
-	const btn = document.getElementById("viboot-dark-toggle");
+	const btn = document.getElementById("vtop-dark-toggle");
 	if (btn) {
 		btn.title = isDark ? "Switch to Light Mode" : "Switch to Dark Mode";
 
@@ -44,8 +44,8 @@ const updateDarkToggleIcon = (isDark) => {
 };
 
 // Apply dark mode immediately on load if preference is set
-chrome.storage.sync.get(["vibootDarkMode"], (result) => {
-	if (result.vibootDarkMode) {
+chrome.storage.sync.get(["vtopDarkMode"], (result) => {
+	if (result.vtopDarkMode) {
 		applyDarkMode();
 	}
 });
@@ -95,7 +95,7 @@ const hideNavbarClutter = () => {
 
 const buildNavbar = (items_list) => {
 	// Avoid duplicates
-	if (document.getElementById("viboot-navbar")) return;
+	if (document.getElementById("vtop-navbar")) return;
 
 	// Remove clutter from original navbar
 	hideNavbarClutter();
@@ -125,13 +125,13 @@ const buildNavbar = (items_list) => {
 	if (!nav || nav.length === 0) return;
 
 	const span = document.createElement("div");
-	span.id = "viboot-navbar";
+	span.id = "vtop-navbar";
 	span.style.cssText = "display:flex;align-items:center;gap:4px;padding:0 8px;";
 
 	// Helper — create a navigation button with original styles
 	const makeBtn = (label, dataUrl) => {
 		if (!dataUrl) return "";
-		return `<button class="btn btn-primary border-primary shadow-none viboot-nav-btn" type="button" style="background:rgba(13,110,253,0);border-style:none;white-space:nowrap;height:32px;display:flex;align-items:center;" data-viboot-url="${dataUrl}">${label}</button>`;
+		return `<button class="btn btn-primary border-primary shadow-none vtop-nav-btn" type="button" style="background:rgba(13,110,253,0);border-style:none;white-space:nowrap;height:32px;display:flex;align-items:center;" data-vtop-url="${dataUrl}">${label}</button>`;
 	};
 
 	span.innerHTML =
@@ -157,7 +157,7 @@ const buildNavbar = (items_list) => {
 
 	const favouriteBtn = document.getElementById("favouriteBtn");
 	if (favouriteBtn) {
-		favouriteBtn.className = "btn btn-primary border-primary shadow-none viboot-nav-btn";
+		favouriteBtn.className = "btn btn-primary border-primary shadow-none vtop-nav-btn";
 		favouriteBtn.style.cssText = "background:transparent !important; border:none !important; box-shadow:none !important; white-space:nowrap; padding:4px 8px !important; display:flex; justify-content:center; align-items:center; outline:none !important; color:#e8e8e8 !important; height: 32px;";
 		// Enforce fixed matching size on the icon
 		const icon = favouriteBtn.querySelector("i");
@@ -171,7 +171,7 @@ const buildNavbar = (items_list) => {
 	const originalHomeBtn = document.querySelector("#quickLinks a[onclick*='home']");
 	if (originalHomeBtn) {
 		const newHomeBtn = document.createElement("button");
-		newHomeBtn.className = "btn btn-primary border-primary shadow-none viboot-nav-btn";
+		newHomeBtn.className = "btn btn-primary border-primary shadow-none vtop-nav-btn";
 		newHomeBtn.style.cssText = "background:rgba(13,110,253,0);border-style:none;white-space:nowrap;padding:4px 8px;display:flex;align-items:center;height:32px;";
 		newHomeBtn.innerHTML = originalHomeBtn.innerHTML; // Keep the icon
 		const icon = newHomeBtn.querySelector("i");
@@ -180,6 +180,11 @@ const buildNavbar = (items_list) => {
 		newHomeBtn.title = "Home";
 
 		newHomeBtn.addEventListener("click", () => {
+			// Strip inline handlers to avoid CSP violations
+			originalHomeBtn.removeAttribute("onclick");
+			if (originalHomeBtn.href && originalHomeBtn.href.startsWith("javascript:")) {
+				originalHomeBtn.removeAttribute("href");
+			}
 			originalHomeBtn.dispatchEvent(new MouseEvent("click", {
 				view: window,
 				bubbles: true,
@@ -195,7 +200,7 @@ const buildNavbar = (items_list) => {
 	const isDark = isDarkModeActive;
 	const darkBtnStyle = "background:transparent !important; border:none !important; box-shadow:none !important; white-space:nowrap; padding:4px 8px; display:flex; justify-content:center; align-items:center; cursor:pointer; outline:none !important; transition:all 0.2s ease; height: 32px;";
 	const darkToggleBtn = document.createElement("button");
-	darkToggleBtn.id = "viboot-dark-toggle";
+	darkToggleBtn.id = "vtop-dark-toggle";
 	darkToggleBtn.type = "button";
 	darkToggleBtn.style.cssText = darkBtnStyle;
 	darkToggleBtn.title = isDark ? "Switch to Light Mode" : "Switch to Dark Mode";
@@ -209,7 +214,7 @@ const buildNavbar = (items_list) => {
 	const logoutForm = document.getElementById("logoutForm1");
 	if (logoutForm) {
 		logoutBtn = document.createElement("button");
-		logoutBtn.className = "btn btn-danger shadow-none viboot-nav-btn";
+		logoutBtn.className = "btn btn-danger shadow-none vtop-nav-btn";
 		logoutBtn.style.cssText = "background:transparent !important; border:none !important; box-shadow:none !important; white-space:nowrap; padding:4px 8px !important; display:flex; justify-content:center; align-items:center; outline:none !important; transition:all 0.2s ease; cursor:pointer; height: 32px;";
 		logoutBtn.innerHTML = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#ff6b6b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="position:relative; top:1px;"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"></path><polyline points="10 17 5 12 10 7"></polyline><line x1="15" y1="12" x2="5" y2="12"></line></svg>';
 		logoutBtn.type = "button";
@@ -255,7 +260,7 @@ const buildNavbar = (items_list) => {
 
 	// Restyle the Reg No text to match our buttons and remove the dropdown caret
 	if (userDropdown) {
-		userDropdown.className = "btn btn-primary border-primary shadow-none viboot-nav-btn";
+		userDropdown.className = "btn btn-primary border-primary shadow-none vtop-nav-btn";
 		userDropdown.style.cssText = "background:transparent !important; border:none !important; box-shadow:none !important; white-space:nowrap; padding:4px 8px !important; display:flex; align-items:center; outline:none !important; height: 32px;";
 
 		const spanText = userDropdown.querySelector("span");
@@ -267,9 +272,9 @@ const buildNavbar = (items_list) => {
 
 	nav[0].insertBefore(span, nav[0].children[0]);
 
-	span.querySelectorAll(".viboot-nav-btn").forEach((btn) => {
+	span.querySelectorAll(".vtop-nav-btn").forEach((btn) => {
 		btn.addEventListener("click", () => {
-			const url = btn.getAttribute("data-viboot-url");
+			const url = btn.getAttribute("data-vtop-url");
 			if (!url) return; // Ignore buttons without URLs (e.g. Dark Mode/Logout handled separately)
 
 			const target = Array.from(document.getElementsByTagName("a")).find(
@@ -277,8 +282,11 @@ const buildNavbar = (items_list) => {
 			);
 
 			if (target) {
-				// Use dispatchEvent instead of .click() to avoid Extension CSP catching
-				// native inline hrefs as "unsafe-inline" extension executions.
+				// Strip inline handlers to avoid CSP violations
+				target.removeAttribute("onclick");
+				if (target.href && target.href.startsWith("javascript:")) {
+					target.removeAttribute("href");
+				}
 				target.dispatchEvent(new MouseEvent("click", {
 					view: window,
 					bubbles: true,
@@ -288,15 +296,15 @@ const buildNavbar = (items_list) => {
 			}
 
 			// Disable buttons momentarily to prevent rapid clicks breaking VTOP AJAX
-			span.querySelectorAll(".viboot-nav-btn").forEach((b) => (b.disabled = true));
+			span.querySelectorAll(".vtop-nav-btn").forEach((b) => (b.disabled = true));
 			setTimeout(() => {
-				span.querySelectorAll(".viboot-nav-btn").forEach((b) => (b.disabled = false));
+				span.querySelectorAll(".vtop-nav-btn").forEach((b) => (b.disabled = false));
 			}, 1000); // 1s timeout ensures VTOP finishes loading the view
 		});
 	});
 
 	// Attach dark mode toggle
-	const darkBtn = document.getElementById("viboot-dark-toggle");
+	const darkBtn = document.getElementById("vtop-dark-toggle");
 	if (darkBtn) {
 		darkBtn.addEventListener("click", toggleDarkMode);
 	}
@@ -304,7 +312,7 @@ const buildNavbar = (items_list) => {
 
 const nav_bar_change = () => {
 	// Don't duplicate
-	if (document.getElementById("viboot-navbar")) return;
+	if (document.getElementById("vtop-navbar")) return;
 
 	let items_list = Array.from(document.getElementsByTagName("a")).filter(
 		(e) => e.dataset.url
@@ -332,7 +340,7 @@ const nav_bar_change = () => {
 };
 
 const clear_navbar = () => {
-	const el = document.getElementById("viboot-navbar");
+	const el = document.getElementById("vtop-navbar");
 	if (el) el.remove();
 };
 
@@ -350,14 +358,12 @@ chrome.runtime.onMessage.addListener((request) => {
 				document.getElementsByClassName("btn-group dropend")[0].remove();
 			}
 			if (
-				document.querySelectorAll(".viboot-nav-btn").length === 0 &&
+				document.querySelectorAll(".vtop-nav-btn").length === 0 &&
 				flag
 			) {
 				nav_bar_change();
 			}
-		} catch (error) {
-			console.log(error);
-		}
+		} catch (error) { }
 	}
 });
 
@@ -370,7 +376,7 @@ if (
 }
 
 // Initial load — set up navbar
-if (document.querySelectorAll(".viboot-nav-btn").length === 0) {
+if (document.querySelectorAll(".vtop-nav-btn").length === 0) {
 	window.addEventListener("load", () => {
 		nav_bar_change();
 	}, false);
@@ -383,7 +389,7 @@ document.addEventListener("click", (e) => {
 	if (a) {
 		const url = a.dataset.url;
 		if (url && !(e.target.closest("#quickLinks") && a.getAttribute("onclick") && a.getAttribute("onclick").includes("home"))) {
-			// Removed sessionStorage.setItem("vibootLastView", url);
+			// Removed sessionStorage.setItem("vtopLastView", url);
 		}
 	}
 });

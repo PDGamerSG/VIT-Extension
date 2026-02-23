@@ -1,5 +1,5 @@
 ﻿// ============================================================
-// ViBoot Captcha Solver — Unified handler for vtop + vtopcc
+// VTop+ Captcha Solver — Unified handler for vtop + vtopcc
 // ============================================================
 
 // ── Bitmap-based solver (vtop.vit.ac.in text captchas) ──

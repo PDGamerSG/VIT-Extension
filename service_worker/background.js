@@ -35,16 +35,11 @@ const trigger_download = (request) => {
   faculty_slot = request.data.faculty_slot;
   module_wise = request.data.module_wise;
   request.data.link_data.forEach((link) => {
-    fetch(link.url, { method: "HEAD", credentials: "include" })
-      .then((response) => {
-        if (response.ok && response.headers.get("Content-Type").includes("pdf")) {
-          chrome.downloads.download({
-            url: link.url,
-            conflictAction: "uniquify",
-          });
-        }
-      })
-      .catch(() => { });
+    if (!link.url) return;
+    chrome.downloads.download({
+      url: link.url,
+      conflictAction: "uniquify",
+    });
   });
 };
 

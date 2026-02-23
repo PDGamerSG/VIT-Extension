@@ -165,8 +165,8 @@
                     transition: "all 0.2s",
                 });
 
-                chrome.storage.sync.get(["vibootHideCGPA"], (result) => {
-                    if (result.vibootHideCGPA) {
+                chrome.storage.sync.get(["vtopHideCGPA"], (result) => {
+                    if (result.vtopHideCGPA) {
                         cgpaBody.style.display = "none";
                         toggleBtn.textContent = "👁‍🗨";
                         toggleBtn.title = "Show CGPA";
@@ -178,7 +178,7 @@
                     cgpaBody.style.display = isHidden ? "" : "none";
                     toggleBtn.textContent = isHidden ? "👁" : "👁‍🗨";
                     toggleBtn.title = isHidden ? "Hide CGPA" : "Show CGPA";
-                    chrome.storage.sync.set({ vibootHideCGPA: !isHidden });
+                    chrome.storage.sync.set({ vtopHideCGPA: !isHidden });
                 });
 
                 cgpaHeader.style.display = "flex";

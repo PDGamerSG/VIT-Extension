@@ -7,39 +7,29 @@ const trigger_download = (downloads) => {
   chrome.runtime.sendMessage({ message: "course-page-data", data: downloads });
 };
 
-//Download Link
+// Download Link — constructs authenticated download URL
 const get_link = (link_element, reg_no) => {
-  if (!link_element) {
-    console.error("Invalid link_element:", link_element);
-    return null;
-  }
+  if (!link_element) return null;
 
-  const url = link_element.getAttribute("data-downloadurl"); // Use data-downloadurl for the URL
-  if (!url) {
-    console.error("URL not found in data-downloadurl attribute.");
-    return null;
-  }
+  const url = link_element.getAttribute("data-downloadurl");
+  if (!url) return null;
+
+  const sanitizedUrl = url.trim().replace(/[^a-zA-Z0-9/_\-.?&=]/g, "");
   const utc = new Date();
-  const webadress = window.location.href;
-  //   console.log(webadress);
+  const encodedRegNo = encodeURIComponent(reg_no || "");
+  const encodedTime = encodeURIComponent(utc.toUTCString());
 
-  if (webadress.indexOf("vtopcc") === -1) {
-    const csrf = document.getElementsByName("_csrf")[0]?.defaultValue || "";
-    const params = `authorizedID=${reg_no}&_csrf=${csrf}&x=${encodeURIComponent(
-      utc.toUTCString()
-    )}`;
-    return `https://vtop.vit.ac.in/vtop/${url.trim()}?${params}`;
+  if (window.location.href.indexOf("vtopcc") === -1) {
+    const csrf = encodeURIComponent(document.getElementsByName("_csrf")[0]?.defaultValue || "");
+    return `https://vtop.vit.ac.in/vtop/${sanitizedUrl}?authorizedID=${encodedRegNo}&_csrf=${csrf}&x=${encodedTime}`;
   } else {
-    const params = `authorizedID=${reg_no}&x=${encodeURIComponent(
-      utc.toUTCString()
-    )}`;
-    return `https://vtopcc.vit.ac.in/vtop/${url.trim()}?${params}`;
+    return `https://vtopcc.vit.ac.in/vtop/${sanitizedUrl}?authorizedID=${encodedRegNo}&x=${encodedTime}`;
   }
 };
 
 //Link Details
 const get_link_details = (link_element, index) => {
-  // console.log(link_element);
+
   if (link_element.outerText.indexOf("_") === -1) {
     let table_rows = link_element.parentNode.parentNode.parentNode.children;
     let module = table_rows[3].innerText.trim();
@@ -61,14 +51,14 @@ const get_link_details = (link_element, index) => {
       title: title,
       folder_title: folder_title,
     };
-    // console.log(data);
+
     return data;
   } else {
     let data = {
       url: get_link(link_element, reg_no),
       title: link_element.title + "-",
     };
-    // console.log(data);
+
     return data;
   }
 };
@@ -97,7 +87,7 @@ const checkbox_link = (chk) => {
 //Download Files "All" or "Selected"
 const download_files = (type) => {
   let all_links = Array.from(document.querySelectorAll(".check-input"));
-  // console.log(all_links);
+
   all_links = all_links
     .filter((link) => type === "all" || link["checked"])
     .map((link, index) => get_link_details(checkbox_link(link)[0], index));
@@ -393,9 +383,7 @@ chrome.runtime.onMessage.addListener((request) => {
           modify_page();
         }
       }, 500);
-    } catch (error) {
-      // console.log(error);
-    }
+    } catch (error) { }
   }
 });
 

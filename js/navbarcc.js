@@ -1,5 +1,5 @@
 // ============================================================
-// ViBoot Navbar for VTOPCC + Dark Mode toggle
+// VTop+ Navbar for VTOPCC + Dark Mode toggle
 // ============================================================
 
 let isDarkModeActiveCC = false;
@@ -21,17 +21,17 @@ const removeDarkModeCC = () => {
 const toggleDarkModeCC = () => {
   if (isDarkModeActiveCC) {
     removeDarkModeCC();
-    chrome.storage.sync.set({ vibootDarkMode: false });
+    chrome.storage.sync.set({ vtopDarkMode: false });
     updateDarkToggleIconCC(false);
   } else {
     applyDarkModeCC();
-    chrome.storage.sync.set({ vibootDarkMode: true });
+    chrome.storage.sync.set({ vtopDarkMode: true });
     updateDarkToggleIconCC(true);
   }
 };
 
 const updateDarkToggleIconCC = (isDark) => {
-  const btn = document.getElementById("viboot-dark-toggle-cc");
+  const btn = document.getElementById("vtop-dark-toggle-cc");
   if (btn) {
     btn.title = isDark ? "Switch to Light Mode" : "Switch to Dark Mode";
     btn.innerHTML = isDark
@@ -41,8 +41,8 @@ const updateDarkToggleIconCC = (isDark) => {
 };
 
 // Apply dark mode on load if preference is set
-chrome.storage.sync.get(["vibootDarkMode"], (result) => {
-  if (result.vibootDarkMode) {
+chrome.storage.sync.get(["vtopDarkMode"], (result) => {
+  if (result.vtopDarkMode) {
     applyDarkModeCC();
   }
 });
@@ -52,7 +52,7 @@ chrome.storage.sync.get(["vibootDarkMode"], (result) => {
 let nav_barcc = () => {
   if (document.URL.match("vtopcc") != null) {
     // Avoid duplicates
-    if (document.getElementById("viboot-navbar-cc")) return;
+    if (document.getElementById("vtop-navbar-cc")) return;
 
     const isDark = isDarkModeActiveCC;
 
@@ -66,7 +66,7 @@ let nav_barcc = () => {
     ];
 
     const span = document.createElement("div");
-    span.id = "viboot-navbar-cc";
+    span.id = "vtop-navbar-cc";
     span.className = "navbar-brand";
     span.style.paddingTop = "20px";
     span.style.display = "flex";
@@ -96,6 +96,11 @@ let nav_barcc = () => {
         const original = document.getElementById(item.id)
           || document.querySelector(`a[onclick*="${item.url}"]`);
         if (original) {
+          // Strip inline handlers to avoid CSP violations
+          original.removeAttribute("onclick");
+          if (original.href && original.href.startsWith("javascript:")) {
+            original.removeAttribute("href");
+          }
           original.dispatchEvent(new MouseEvent("click", {
             view: window,
             bubbles: true,
@@ -110,7 +115,7 @@ let nav_barcc = () => {
 
     // Dark mode toggle button
     const darkToggleBtn = document.createElement("button");
-    darkToggleBtn.id = "viboot-dark-toggle-cc";
+    darkToggleBtn.id = "vtop-dark-toggle-cc";
     darkToggleBtn.type = "button";
     darkToggleBtn.title = isDark ? "Switch to Light Mode" : "Switch to Dark Mode";
     Object.assign(darkToggleBtn.style, {
@@ -146,8 +151,6 @@ chrome.runtime.onMessage.addListener((request) => {
   if (request.message === "vtopcc_nav_bar") {
     try {
       nav_barcc();
-    } catch (error) {
-      // console.log(error);
-    }
+    } catch (error) { }
   }
 });
