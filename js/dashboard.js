@@ -27,6 +27,29 @@
         // Disconnect observer now that we're done
         if (observer) observer.disconnect();
 
+        // ── Global Aesthetic Upgrades ──
+        const vitExtStyle = document.getElementById("vit-ext-dashboard-styles") || document.createElement("style");
+        vitExtStyle.id = "vit-ext-dashboard-styles";
+        vitExtStyle.textContent = `
+            .card {
+                border: 1px solid #dee2e6 !important;
+                border-radius: 8px !important;
+                box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05) !important;
+                margin-bottom: 20px !important;
+                overflow: hidden !important;
+                background: #fff !important;
+            }
+            .card-header {
+                background: #f8fafc !important;
+                border-bottom: 1px solid #f1f5f9 !important;
+                padding: 12px 16px !important;
+            }
+            .primaryBorderTop {
+                border-top: none !important;
+            }
+        `;
+        if (!vitExtStyle.parentElement) document.head.appendChild(vitExtStyle);
+
         // ── 0. Expand course registration card ──
         const courseCard = document.getElementById("course-data");
         if (courseCard) {
@@ -101,9 +124,9 @@
         // ── 4. Create Class Messages card next to Proctor Message ──
         if (proctorCard && !document.getElementById("vit-ext-class-messages")) {
             const msgCard = document.createElement("div");
-            msgCard.className = "card border-0 mb-3";
+            msgCard.className = "card mb-3";
             const msgHeader = document.createElement("div");
-            msgHeader.className = "card-header primaryBorderTop";
+            msgHeader.className = "card-header";
             msgHeader.innerHTML = '<span class="fs-6 fontcolor3 fw-bold">Class Messages</span>';
             const msgBody = document.createElement("div");
             msgBody.className = "card-body";
@@ -112,21 +135,17 @@
             msgCard.appendChild(msgHeader);
             msgCard.appendChild(msgBody);
 
-            // Insert right after the proctor card
-            proctorCard.insertAdjacentElement("afterend", msgCard);
+            // Insert above the CGPA card
+            cgpaCard.insertAdjacentElement("beforebegin", msgCard);
             loadClassMessages(msgBody);
         }
 
         // ── 5. Move Proctor Message + Class Messages below Digital Assignments ──
+        // ── 5. Move Proctor Message below Digital Assignments ──
         const daCard = findCardByTitle("Forthcoming Digital Assignments");
         if (daCard && proctorCard) {
             // Move proctor card after the DA card
             daCard.insertAdjacentElement("afterend", proctorCard);
-            // The class messages card follows proctor, move it too
-            const classMsgCard = document.getElementById("vit-ext-class-messages")?.closest(".card");
-            if (classMsgCard) {
-                proctorCard.insertAdjacentElement("afterend", classMsgCard);
-            }
         }
     };
 
