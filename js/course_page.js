@@ -112,90 +112,10 @@ const download_files = (type) => {
   });
 };
 
-let change_type = (box) => {
-  // console.log(box);
-  box.target.checked = true;
-  // console.log(box);
-};
+
 
 const modify_page = () => {
   const { course, faculty_slot } = course_details();
-
-  //Caution text
-  let text_div = document.createElement("div");
-  text_div.innerHTML = `<p>*Please disable <span><b>Ask location before each download</b></span> setting in your browser.</p>`;
-  text_div.style.color = "red";
-  text_div.style.fontSize = "1rem";
-  document
-    .getElementsByClassName("table")[2]
-    .insertAdjacentElement("beforebegin", text_div);
-
-  let newDiv = document.createElement("div");
-
-  //   /*add buttons at top of the page*/
-
-  //   // Add download all button
-  //   let download_all_vtop = document.getElementsByClassName(
-  //     "btn btn-md btn-primary btn-block"
-  //   )[0];
-  //   let download_all_u = download_all_vtop.cloneNode(true);
-  //   download_all_u.removeAttribute("href");
-  //   download_all_u.name = "download_all_u";
-  //   download_all_u.style =
-  //     "float: right; width: auto; margin-right: 10px; margin-top: -1px";
-  //   download_all_u.onclick = () => download_files("all");
-  //   // document.getElementsByClassName("box-title")[0].appendChild(download_all_u);
-  //   newDiv.appendChild(download_all_u);
-
-  //   //Add Download selected button
-  //   let download_selected_u = download_all_u.cloneNode(true);
-  //   download_selected_u.name = "";
-  //   download_selected_u.innerHTML =
-  //     '<span class="glyphicon glyphicon-download-alt"></span> Download Selected';
-  //   download_selected_u.style =
-  //     "float: right; width: auto; margin-right: 10px; margin-top: -1px";
-  //   download_selected_u.onclick = () => download_files("selected");
-  //   // document.getElementsByClassName("box-title")[0].appendChild(download_selected_u);
-  //   // document.getElementsByClassName("table-responsive")[1].insertAdjacentElement("beforeend",download_selected_u);
-  //   newDiv.appendChild(download_selected_u);
-
-  //   //select all button
-  //   const div = document.createElement("div");
-  //   div.style =
-  //     "float: right; width: auto; margin-top: -1px; margin-right: 25px;";
-  //   const select_all_elem = document.createElement("input");
-  //   select_all_elem.setAttribute("type", "checkbox");
-  //   select_all_elem.setAttribute("id", "select_all");
-  //   const select_all_text = document.createElement("label");
-  //   select_all_text.innerHTML = "&nbsp;Select All";
-
-  //   div.appendChild(select_all_elem);
-  //   div.appendChild(select_all_text);
-  //   // document.getElementsByClassName("table")[2].insertAdjacentElement("beforebegin", div);
-  //   newDiv.appendChild(div);
-
-  //   //Name for the files to be given
-  //   let dropdown_file = document.createElement("select");
-  //   dropdown_file.innerHTML = `
-  //     <option value="table_name">File name as Lecture topic</option>
-  //     <option value="fac_upload_name">File name as uploaded by faculty</option>`;
-  //   dropdown_file.style = "float: right; width: auto; margin-right: 25px;";
-  //   dropdown_file.id = "drop_file";
-  //   // document.getElementsByClassName("table")[2].insertAdjacentElement("beforebegin", dropdown_file);
-  //   newDiv.appendChild(dropdown_file);
-
-  //   chrome.storage.sync.set({ file_name: "table_name" });
-
-  //   //Type of selection for check boxes
-  //   let dropdown_hover = document.createElement("select");
-  //   dropdown_hover.innerHTML = `
-  //     <option value="click">Click</option>
-  //     <option value="hover">Hover</option>`;
-  //   dropdown_hover.style = "float: right; width: auto; margin-right: 25px;";
-  //   dropdown_hover.id = "type_drop";
-  //   // document.getElementsByClassName("table")[2].insertAdjacentElement("beforebegin", dropdown_hover);
-  //   newDiv.appendChild(dropdown_hover);
-
 
   /* ADD MODULE-WISE TOGGLE SWITCH */
   let targetElement = document.querySelector("#CoursePageLectureDetail > div:nth-child(11) > div.form-group.col-sm-12.row.mb-3");
@@ -227,25 +147,13 @@ const modify_page = () => {
 
     toggleCheckbox.addEventListener("change", () => {
       moduleWise = toggleCheckbox.checked;
-      console.log("Module Wise Download:", moduleWise);
     });
-  } else {
-    console.error("Target element for module-wise toggle switch not found!");
   }
 
-  /*add check boxes to the materials*/
-
-  //takes the reference material links
+  // Reference material links — redirect downloads through the extension
   let material = Array.from(document.querySelectorAll(".btn-link"));
-  let ref_material = [];
-  material.forEach((material_link1) => {
-    if (!material_link1.innerHTML.includes("Web Material")) {
-      ref_material.push(material_link1);
-    }
-  });
-  // console.log(ref_material);
+  let ref_material = material.filter(m => !m.innerHTML.includes("Web Material"));
 
-  //remove the download redirection of material and add checkbox
   ref_material.forEach((elem, index) => {
     elem.addEventListener("click", (event) => {
       event.preventDefault();
@@ -256,69 +164,18 @@ const modify_page = () => {
         module_wise: moduleWise,
       });
     });
-
-    const check = document.createElement("input");
-    check.setAttribute("type", "checkbox");
-    check.setAttribute("class", "check-input");
-    // elem.parentNode.insertBefore(check, elem.parentNode.firstChild);
   });
 
-  // Add tool tip for check boxes
-  let chk_boxes = document.getElementsByClassName("check-input");
-  for (let i = 0; i < chk_boxes.length; i++) {
-    chk_boxes[i].setAttribute("title", i + 1);
-  }
+  // Add tooltips to materials
   for (let i = 0; i < ref_material.length; i++) {
     ref_material[i].setAttribute("title", i + 1);
   }
 
-  document
-    .getElementsByClassName("table table-bordered table-hover responsive")[0]
-    .insertAdjacentElement("beforebegin", newDiv);
-
-  //set the file name to be downloaded in storage
-  document.getElementById("drop_file").addEventListener("change", () => {
-    let file_name_drop = document.getElementById("drop_file").value;
-    if (file_name_drop === "fac_upload_name") {
-      chrome.runtime.sendMessage({
-        message: "fac_upload_name",
-      });
-    } else if (file_name_drop === "table_name") {
-      chrome.runtime.sendMessage({
-        message: "table_name",
-      });
-    }
-  });
-
-  //Hover on check boxes to select
-  document.getElementById("type_drop").addEventListener("change", () => {
-    let checkbox1 = Array.from(document.querySelectorAll(".check-input"));
-    let val = document.getElementById("type_drop").value;
-
-    if (val == "hover") {
-      // alert("hover")
-      checkbox1.forEach((box) => {
-        box.addEventListener("mouseover", change_type);
-      });
-    } else if (val == "click") {
-      checkbox1.forEach((box, index) => {
-        box.removeEventListener("mouseover", change_type);
-      });
-    }
-  });
-
-  select_all_elem.addEventListener("click", () => {
-    const checkedValue = document.getElementById("select_all").checked;
-    let checkbox = Array.from(document.querySelectorAll(".check-input"));
-    checkbox.forEach((boxes) => {
-      boxes.checked = checkedValue;
-    });
-  });
-
-  /*add buttons @ bottom of the page*/
+  /* Download buttons at the bottom of the page */
   let footer = document.getElementsByClassName("form-group col-md-4")[2];
+  if (!footer) return;
   footer.className = "form-group col-md-6";
-  //Add download all button
+
   let download_all_d = document.getElementById("backButton").cloneNode(true);
   download_all_d.removeAttribute("href");
   download_all_d.removeAttribute("onclick");
@@ -327,7 +184,6 @@ const modify_page = () => {
   download_all_d.onclick = () => download_files("all");
   footer.appendChild(download_all_d);
 
-  //Add download selected button
   let download_selected_d = download_all_d.cloneNode(true);
   download_selected_d.innerText = "Download selected files";
   download_selected_d.onclick = () => download_files("selected");
@@ -369,58 +225,75 @@ const addSemesterFilter = () => {
   Object.assign(filterBar.style, {
     display: "flex",
     alignItems: "center",
-    gap: "10px",
-    padding: "10px 12px",
+    gap: "6px",
+    padding: "8px 12px",
     margin: "8px 0 12px 0",
-    background: "#f8fafc",
     borderRadius: "8px",
-    border: "1px solid #e2e8f0",
     flexWrap: "wrap",
   });
 
   // Label
   const label = document.createElement("span");
-  label.textContent = "Semester:";
+  label.textContent = "Filter:";
   Object.assign(label.style, {
     fontSize: "13px",
-    fontWeight: "700",
-    color: "#1e293b",
+    fontWeight: "600",
+    color: "#64748b",
+    marginRight: "4px",
   });
   filterBar.appendChild(label);
 
-  // Button creator
+  // Button state
   const buttons = [];
   let activeKey = "all";
+
+  // Minimal pill-shaped button styles
+  const BTN_BASE = {
+    padding: "5px 14px",
+    borderRadius: "20px",
+    fontSize: "12px",
+    fontWeight: "500",
+    cursor: "pointer",
+    outline: "none",
+    border: "1px solid #e2e8f0",
+    backgroundColor: "transparent",
+    color: "#475569",
+    transition: "all 200ms ease",
+    lineHeight: "1.4",
+    letterSpacing: "0.01em",
+  };
+
+  const BTN_ACTIVE = {
+    backgroundColor: "#3b82f6",
+    color: "#ffffff",
+    borderColor: "#3b82f6",
+    fontWeight: "600",
+  };
+
+  const BTN_INACTIVE = {
+    backgroundColor: "transparent",
+    color: "#475569",
+    borderColor: "#e2e8f0",
+    fontWeight: "500",
+  };
 
   const createBtn = (text, key) => {
     const btn = document.createElement("button");
     btn.type = "button";
     btn.textContent = text;
     btn.dataset.semKey = key;
-
-    // Style mimicking DARK MODE/ui/stylesheet-editor/style.css
-    Object.assign(btn.style, {
-      padding: "4px 12px",
-      marginRight: "8px",
-      borderRadius: "4px",
-      fontSize: "13px",
-      cursor: "pointer",
-      outline: "none",
-      border: "1px solid #316e7d",
-      backgroundColor: "#141e24",
-      color: "#ffffff",
-      transition: "background-color 250ms"
-    });
+    Object.assign(btn.style, BTN_BASE);
 
     btn.addEventListener("mouseenter", () => {
       if (activeKey !== key) {
-        btn.style.backgroundColor = "#193945"; // Hover color
+        btn.style.backgroundColor = "#f1f5f9";
+        btn.style.borderColor = "#cbd5e1";
       }
     });
 
     btn.addEventListener("mouseleave", () => {
       if (activeKey !== key) {
-        btn.style.backgroundColor = "#141e24"; // Default color
+        Object.assign(btn.style, BTN_INACTIVE);
       }
     });
 
@@ -432,63 +305,48 @@ const addSemesterFilter = () => {
 
   const setActiveBtn = (key) => {
     activeKey = key;
-    lastActiveFilter = key; // Persist across re-creations
+    lastActiveFilter = key;
     buttons.forEach(b => {
       if (b.key === key) {
-        // Active state
-        b.btn.style.backgroundColor = "#316e7d"; // Active highlight
-        b.btn.style.fontWeight = "bold";
+        Object.assign(b.btn.style, BTN_ACTIVE);
       } else {
-        // Inactive state
-        b.btn.style.backgroundColor = "#141e24";
-        b.btn.style.fontWeight = "normal";
+        Object.assign(b.btn.style, BTN_INACTIVE);
       }
     });
   };
 
-  // Create buttons
-  createBtn("All Semesters", "all");
-  if (fallOptions.length > 0) createBtn("Fall (" + fallOptions.length + ")", "fall");
-  if (winterOptions.length > 0) createBtn("Winter (" + winterOptions.length + ")", "winter");
+  // Create filter buttons
+  createBtn("All", "all");
+  if (fallOptions.length > 0) createBtn("Fall · " + fallOptions.length, "fall");
+  if (winterOptions.length > 0) createBtn("Winter · " + winterOptions.length, "winter");
 
-  // Count badge
+  // Course count badge
   const badge = document.createElement("span");
   Object.assign(badge.style, {
     marginLeft: "auto",
-    fontSize: "12px",
-    color: "#777",
+    fontSize: "11px",
+    color: "#94a3b8",
+    fontWeight: "500",
   });
-  badge.textContent = courseOptions.length + " total courses";
+  badge.textContent = courseOptions.length + " courses";
   filterBar.appendChild(badge);
 
-  // Filter function — removes and re-adds options
+  // Filter logic
   const filterCourses = (key) => {
-    // Preserve currently selected course value
     const selectedValue = courseSelect.value;
 
-    // Clear all options
     while (courseSelect.options.length > 0) {
       courseSelect.remove(0);
     }
 
-    // Re-add default option
     if (defaultOption) courseSelect.appendChild(defaultOption.cloneNode(true));
 
-    let filtered;
-    if (key === "fall") {
-      filtered = fallOptions;
-    } else if (key === "winter") {
-      filtered = winterOptions;
-    } else {
-      filtered = courseOptions;
-    }
+    const filtered = key === "fall" ? fallOptions
+      : key === "winter" ? winterOptions
+        : courseOptions;
 
-    // Add filtered options
-    filtered.forEach(opt => {
-      courseSelect.appendChild(opt.cloneNode(true));
-    });
+    filtered.forEach(opt => courseSelect.appendChild(opt.cloneNode(true)));
 
-    // Restore selection if it exists in the newly filtered options
     if (selectedValue && Array.from(courseSelect.options).some(o => o.value === selectedValue)) {
       courseSelect.value = selectedValue;
     } else {
@@ -498,14 +356,14 @@ const addSemesterFilter = () => {
     setActiveBtn(key);
   };
 
-  // Insert after legend
+  // Insert into DOM
   if (legend) {
     legend.insertAdjacentElement("afterend", filterBar);
   } else {
     fieldset.insertBefore(filterBar, fieldset.firstChild);
   }
 
-  // Set initial state — restore previous filter if it was active
+  // Restore previous filter state
   setActiveBtn(lastActiveFilter);
   if (lastActiveFilter !== "all") {
     filterCourses(lastActiveFilter);

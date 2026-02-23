@@ -1,4 +1,10 @@
-﻿const captcha_parse = (imgarr) => {
+﻿// ============================================================
+// ViBoot Captcha Solver — Unified handler for vtop + vtopcc
+// ============================================================
+
+// ── Bitmap-based solver (vtop.vit.ac.in text captchas) ──
+
+const captcha_parse = (imgarr) => {
   let captcha = "";
   for (let x = 1; x < 44; x++) {
     for (let y = 1; y < 179; y++) {
@@ -49,7 +55,6 @@
   return captcha;
 };
 
-
 const uri_to_img_data = (URI) => {
   return new Promise(function (resolve, reject) {
     if (URI == null) return reject();
@@ -71,8 +76,7 @@ const uri_to_img_data = (URI) => {
 };
 
 const fill_captcha = (imgb64) => {
-  const URI = imgb64;
-  uri_to_img_data(URI).then((imageData) => {
+  uri_to_img_data(imgb64).then((imageData) => {
     let arr = [];
     let newArr = [];
     for (let i = 0; i < imageData["data"].length; i += 4) {
@@ -84,67 +88,60 @@ const fill_captcha = (imgb64) => {
     }
     while (arr.length) newArr.push(arr.splice(0, 180));
     const res = captcha_parse(newArr);
-    document.getElementById("captchaCheck").value = res;
+    const captchaInput = document.getElementById("captchaCheck");
+    if (captchaInput) captchaInput.value = res;
   });
 };
 
 const solve_captcha = (img) => {
-  const image = img.src;
-  fill_captcha(image);
+  if (img && img.src) fill_captcha(img.src);
 };
 
+// ── Neural-network-based solver (vtopcc picture captchas) ──
 
 const pre_img = (img) => {
   let avg = 0;
   img.forEach((e) => e.forEach((f) => (avg += f)));
-  avg /= 24 * 22;
-  var bits = new Array(img.length);
-  for (let i = 0; i < img.length; i += 1) {
-    bits[i] = new Array(img[0].length);
-    for (let j = 0; j < img[0].length; j += 1) {
-      if (img[i][j] > avg) {
-        bits[i][j] = 1;
-      } else {
-        bits[i][j] = 0;
-      }
+  avg /= img.length * img[0].length;
+  const bits = [];
+  for (let i = 0; i < img.length; i++) {
+    bits[i] = [];
+    for (let j = 0; j < img[0].length; j++) {
+      bits[i][j] = img[i][j] > avg ? 1 : 0;
     }
   }
   return bits;
 };
 
 const saturation = (d) => {
-  saturate = new Array(d.length / 4);
+  const saturate = new Array(d.length / 4);
   for (let i = 0; i < d.length; i += 4) {
-    min = Math.min(d[i], d[i + 1], d[i + 2]);
-    max = Math.max(d[i], d[i + 1], d[i + 2]);
+    const min = Math.min(d[i], d[i + 1], d[i + 2]);
+    const max = Math.max(d[i], d[i + 1], d[i + 2]);
     saturate[i / 4] = Math.round(((max - min) * 255) / max);
   }
-  var img = new Array(40);
-  for (let i = 0; i < 40; i += 1) {
-    img[i] = new Array(200);
-    for (let j = 0; j < 200; j += 1) {
+  const img = [];
+  for (let i = 0; i < 40; i++) {
+    img[i] = [];
+    for (let j = 0; j < 200; j++) {
       img[i][j] = saturate[i * 200 + j];
     }
   }
-  bls = new Array(6);
-  for (let i = 0; i < 6; i += 1) {
-    c = 0;
-    d = 0;
-    x1 = (i + 1) * 25 + 2;
-    y1 = 7 + 5 * (i % 2) + 1;
-    x2 = (i + 2) * 25 + 1;
-    y2 = 35 - 5 * ((i + 1) % 2);
-    bls[i] = img.slice(y1, y2).map((i) => i.slice(x1, x2));
+  const bls = [];
+  for (let i = 0; i < 6; i++) {
+    const x1 = (i + 1) * 25 + 2;
+    const y1 = 7 + 5 * (i % 2) + 1;
+    const x2 = (i + 2) * 25 + 1;
+    const y2 = 35 - 5 * ((i + 1) % 2);
+    bls[i] = img.slice(y1, y2).map((row) => row.slice(x1, x2));
   }
   return bls;
 };
 
-
-
 const flatten = (arr) => {
-  var bits = new Array(arr.length * arr[0].length);
-  for (let i = 0; i < arr.length; i += 1) {
-    for (let j = 0; j < arr[0].length; j += 1) {
+  const bits = new Array(arr.length * arr[0].length);
+  for (let i = 0; i < arr.length; i++) {
+    for (let j = 0; j < arr[0].length; j++) {
       bits[i * arr[0].length + j] = arr[i][j];
     }
   }
@@ -152,16 +149,10 @@ const flatten = (arr) => {
 };
 
 const mat_mul = (a, b) => {
-  let x = a.length,
-    z = a[0].length,
-    y = b[0].length;
-  let productRow = Array.apply(null, new Array(y)).map(
-    Number.prototype.valueOf,
-    0
-  );
-  let product = new Array(x);
+  const x = a.length, z = a[0].length, y = b[0].length;
+  const product = [];
   for (let p = 0; p < x; p++) {
-    product[p] = productRow.slice();
+    product[p] = new Array(y).fill(0);
   }
   for (let i = 0; i < x; i++) {
     for (let j = 0; j < y; j++) {
@@ -174,40 +165,36 @@ const mat_mul = (a, b) => {
 };
 
 const mat_add = (a, b) => {
-  let x = a.length;
-  let c = new Array(x);
-  for (let i = 0; i < x; i++) {
+  const c = new Array(a.length);
+  for (let i = 0; i < a.length; i++) {
     c[i] = a[i] + b[i];
   }
   return c;
 };
 
 const max_soft = (a) => {
-  var n = [...a];
   let s = 0;
-  n.forEach((f) => {
-    s += Math.exp(f);
+  const n = a.map(v => {
+    const e = Math.exp(v);
+    s += e;
+    return e;
   });
-  for (let i = 0; i < a.length; i++) {
-    n[i] = Math.exp(a[i]) / s;
-  }
-  return n;
+  return n.map(v => v / s);
 };
 
-const HEIGHT = 40;
-const WIDTH = 200;
-
-const solve = async (img, textB) => {
+const solve = (img, textB) => {
   const weights = bitmaps.weights;
   const biases = bitmaps.biases;
   const label_txt = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
   const canvas = document.createElement("canvas");
   const ctx = canvas.getContext("2d");
+  canvas.width = 200;
+  canvas.height = 40;
   ctx.drawImage(img, 0, 0);
   const pd = ctx.getImageData(0, 0, 200, 40);
   let bls = saturation(pd.data);
-  out = "";
-  for (let i = 0; i < 6; i += 1) {
+  let out = "";
+  for (let i = 0; i < 6; i++) {
     bls[i] = pre_img(bls[i]);
     bls[i] = [flatten(bls[i])];
     bls[i] = mat_mul(bls[i], weights);
@@ -219,32 +206,55 @@ const solve = async (img, textB) => {
   textB.value = out;
 };
 
-function myMain(evt) {
-  if (document.URL.match('https://vtopcc.vit.ac.in/vtop/initialProcess')) {
-    const jsInitChecktimer = setInterval(checkForJS_Finish, 111);
-    function checkForJS_Finish() {
-      let element = document.querySelector('img[alt="vtopCaptcha"]');
+// ── Unified entry point ──
+
+function myMain() {
+  // --- VTOPCC Login Captcha (vtopCaptcha) ---
+  if (document.URL.includes("vtopcc.vit.ac.in/vtop/initialProcess")) {
+    const jsInitChecktimer = setInterval(function checkForJS_Finish() {
+      const element = document.querySelector('img[alt="vtopCaptcha"]');
       if (element) {
         clearInterval(jsInitChecktimer);
         solve_captcha(element);
-        let observer = new MutationObserver(function () {
-          solve_captcha(document.querySelector('img[alt="vtopCaptcha"]'));
-        });
-        observer.observe(document.getElementById("captchaRefresh"), {
-          childList: true,
-        });
+        const refreshBtn = document.getElementById("captchaRefresh");
+        if (refreshBtn) {
+          new MutationObserver(() => {
+            const img = document.querySelector('img[alt="vtopCaptcha"]');
+            if (img) solve_captcha(img);
+          }).observe(refreshBtn, { childList: true });
+        }
       }
+    }, 111);
+    return;
+  }
+
+  // --- VTOP Main Portal Captcha (picture/image-based text captcha) ---
+  const img = document.querySelector(".form-control.img-fluid.bg-light.border-0");
+  if (!img) return;
+
+  const textB = document.getElementById("captchaStr");
+  const submitB = document.getElementById("submitBtn");
+
+  if (textB) {
+    // Try the NN solver first (handles picture captchas better)
+    try {
+      solve(img, textB);
+    } catch (e) {
+      // Fallback to bitmap solver
+      try {
+        fill_captcha(img.src);
+        // Redirect output to the correct field
+        setTimeout(() => {
+          const bitmapResult = document.getElementById("captchaCheck");
+          if (bitmapResult && bitmapResult.value && textB) {
+            textB.value = bitmapResult.value;
+          }
+        }, 500);
+      } catch (_) { }
     }
   }
-  var img = document.getElementsByClassName("form-control img-fluid bg-light border-0")[0];
-  if (!img) return;
-  img.style.height = "40px!important";
-  img.style.width = "200px!important";
-  var textB = document.getElementById("captchaStr");
-  var submitB = document.getElementById("submitBtn");
-  solve(img, textB);
-  if (submitB) submitB.focus();
 
+  if (submitB) submitB.focus();
 }
 
 window.addEventListener("load", myMain, false);
