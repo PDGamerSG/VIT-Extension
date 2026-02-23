@@ -4,26 +4,24 @@
 
 // ---- Dark Mode ----
 
-const DARK_STYLE_ID = "viboot-dark-mode";
+let isDarkModeActive = false;
 
 const applyDarkMode = () => {
-	if (document.getElementById(DARK_STYLE_ID)) return;
-	const link = document.createElement("link");
-	link.id = DARK_STYLE_ID;
-	link.rel = "stylesheet";
-	link.type = "text/css";
-	link.href = chrome.runtime.getURL("js/darkmode.css");
-	document.head.appendChild(link);
+	isDarkModeActive = true;
+	DarkReader.enable({
+		brightness: 100,
+		contrast: 100,
+		sepia: 0
+	});
 };
 
 const removeDarkMode = () => {
-	const el = document.getElementById(DARK_STYLE_ID);
-	if (el) el.remove();
+	isDarkModeActive = false;
+	DarkReader.disable();
 };
 
 const toggleDarkMode = () => {
-	const isActive = !!document.getElementById(DARK_STYLE_ID);
-	if (isActive) {
+	if (isDarkModeActive) {
 		removeDarkMode();
 		chrome.storage.sync.set({ vibootDarkMode: false });
 		updateDarkToggleIcon(false);
@@ -37,8 +35,11 @@ const toggleDarkMode = () => {
 const updateDarkToggleIcon = (isDark) => {
 	const btn = document.getElementById("viboot-dark-toggle");
 	if (btn) {
-		btn.textContent = isDark ? "☀️" : "🌙";
 		btn.title = isDark ? "Switch to Light Mode" : "Switch to Dark Mode";
+
+		btn.innerHTML = isDark
+			? '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#e8e8e8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="position:relative; top:2px;"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line></svg>'
+			: '<svg width="18" height="18" viewBox="0 0 24 24" fill="#e8e8e8" stroke="none" style="position:relative; top:2px;"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>';
 	}
 };
 
@@ -62,7 +63,6 @@ const hideNavbarClutter = () => {
 
 	hideAggressively(document.getElementById("quickLinks"));
 	hideAggressively(document.getElementById("printVTOPCoreDocument"));
-	hideAggressively(document.getElementById("favouriteBtn"));
 	hideAggressively(document.getElementById("campusEtiquetteBtn"));
 	hideAggressively(document.querySelector("#quickLinks a[onclick*='home']"));
 
@@ -155,6 +155,16 @@ const buildNavbar = (items_list) => {
 		span.appendChild(originalDropdown);
 	}
 
+	const favouriteBtn = document.getElementById("favouriteBtn");
+	if (favouriteBtn) {
+		favouriteBtn.className = "btn btn-primary border-primary shadow-none viboot-nav-btn";
+		favouriteBtn.style.cssText = "background:transparent !important; border:none !important; box-shadow:none !important; white-space:nowrap; padding:4px 8px !important; display:flex; justify-content:center; align-items:center; outline:none !important; color:#e8e8e8 !important;";
+		// Enforce fixed matching size on the icon
+		const icon = favouriteBtn.querySelector("i");
+		if (icon) icon.style.cssText = "font-size: 20px !important; position: relative; top: 2px;";
+		favouriteBtn.style.display = "flex";
+	}
+
 	// Dark mode toggle will be generated as a DOM node and added to the right side navigation area
 
 	// Recreate home button to avoid CSP inline-execution errors when moving elements with `onclick="javascript:..."`
@@ -164,9 +174,8 @@ const buildNavbar = (items_list) => {
 		newHomeBtn.className = "btn btn-primary border-primary shadow-none viboot-nav-btn";
 		newHomeBtn.style.cssText = "background:rgba(13,110,253,0);border-style:none;white-space:nowrap;padding:4px 8px;display:flex;align-items:center;";
 		newHomeBtn.innerHTML = originalHomeBtn.innerHTML; // Keep the icon
-		// Shift the icon down by 2px visually centering it
 		const icon = newHomeBtn.querySelector("i");
-		if (icon) icon.style.cssText = "position: relative; top: 2px;";
+		if (icon) icon.style.cssText = "font-size: 20px !important; position: relative; top: 2px;";
 		newHomeBtn.type = "button";
 		newHomeBtn.title = "Home";
 
@@ -183,14 +192,17 @@ const buildNavbar = (items_list) => {
 	}
 
 	// Create Dark Mode toggle icon
-	const isDark = !!document.getElementById(DARK_STYLE_ID);
-	const darkBtnStyle = "background:transparent;border:1px solid rgba(255,255,255,0.2);border-radius:50%;width:32px;height:32px;font-size:15px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all 0.2s ease;";
+	const isDark = isDarkModeActive;
+	const darkBtnStyle = "background:transparent !important; border:none !important; box-shadow:none !important; white-space:nowrap; padding:4px 8px; display:flex; justify-content:center; align-items:center; cursor:pointer; outline:none !important; transition:all 0.2s ease;";
 	const darkToggleBtn = document.createElement("button");
 	darkToggleBtn.id = "viboot-dark-toggle";
 	darkToggleBtn.type = "button";
 	darkToggleBtn.style.cssText = darkBtnStyle;
 	darkToggleBtn.title = isDark ? "Switch to Light Mode" : "Switch to Dark Mode";
-	darkToggleBtn.innerHTML = isDark ? "☀️" : "🌙";
+
+	darkToggleBtn.innerHTML = isDark
+		? '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#e8e8e8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="position:relative; top:1px;"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line></svg>'
+		: '<svg width="20" height="20" viewBox="0 0 24 24" fill="#e8e8e8" stroke="none" style="position:relative; top:1px;"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>';
 
 	// Create a dedicated Sign Out button that triggers the hidden logout form
 	let logoutBtn = null;
@@ -198,8 +210,8 @@ const buildNavbar = (items_list) => {
 	if (logoutForm) {
 		logoutBtn = document.createElement("button");
 		logoutBtn.className = "btn btn-danger shadow-none viboot-nav-btn";
-		logoutBtn.style.cssText = "background:rgba(220,53,69,0.15) !important; border: 1px solid rgba(220,53,69,0.3) !important; color: #ff6b6b !important; white-space:nowrap; padding:4px 12px !important; display:flex; align-items:center; font-weight: 600 !important;";
-		logoutBtn.innerHTML = "Sign Out";
+		logoutBtn.style.cssText = "background:transparent !important; border:none !important; box-shadow:none !important; white-space:nowrap; padding:4px 8px !important; display:flex; justify-content:center; align-items:center; outline:none !important; transition:all 0.2s ease; cursor:pointer;";
+		logoutBtn.innerHTML = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#ff6b6b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="position:relative; top:1px;"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"></path><polyline points="10 17 5 12 10 7"></polyline><line x1="15" y1="12" x2="5" y2="12"></line></svg>';
 		logoutBtn.type = "button";
 		logoutBtn.title = "Sign Out";
 
@@ -215,7 +227,8 @@ const buildNavbar = (items_list) => {
 	if (rightNav) {
 		const rightBtnsLi = document.createElement("li");
 		rightBtnsLi.className = "nav-item d-none d-sm-flex";
-		rightBtnsLi.style.cssText = "align-items: center; gap: 8px; margin-right: 12px;";
+		rightBtnsLi.style.cssText = "align-items: center; gap: 4px; margin-right: 12px;";
+		if (favouriteBtn) rightBtnsLi.appendChild(favouriteBtn);
 		rightBtnsLi.appendChild(darkToggleBtn);
 		if (logoutBtn) rightBtnsLi.appendChild(logoutBtn);
 
@@ -228,6 +241,7 @@ const buildNavbar = (items_list) => {
 			rightNav.appendChild(rightBtnsLi);
 		}
 	} else {
+		if (favouriteBtn) span.appendChild(favouriteBtn);
 		span.appendChild(darkToggleBtn);
 		if (logoutBtn) span.appendChild(logoutBtn);
 	}
@@ -236,12 +250,12 @@ const buildNavbar = (items_list) => {
 	const userDropdown = document.getElementById("navbarDropdown");
 	if (userDropdown) {
 		userDropdown.className = "btn btn-primary border-primary shadow-none viboot-nav-btn";
-		userDropdown.style.cssText = "background:rgba(13,110,253,0) !important; border-style:none !important; white-space:nowrap; padding:4px 12px !important; display:flex; align-items:center;";
+		userDropdown.style.cssText = "background:transparent !important; border:none !important; box-shadow:none !important; white-space:nowrap; padding:4px 8px !important; display:flex; align-items:center; outline:none !important;";
 
 		const spanText = userDropdown.querySelector("span");
 		if (spanText) {
 			spanText.className = "";
-			spanText.style.cssText = "color: #e8e8e8 !important; font-size: 13px !important; font-weight: 500 !important; letter-spacing: 0.3px;";
+			spanText.style.cssText = "color: #e8e8e8 !important; font-size: inherit; font-weight: normal;";
 		}
 	}
 

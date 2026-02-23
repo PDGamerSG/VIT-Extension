@@ -33,6 +33,7 @@
 				"*://vtopcc.vit.ac.in/vtop/*"
 			],
 			"js": [
+				"js/darkreader.js",
 				"js/attendance.js",
 				"js/marks_page.js",
 				"js/course_page.js",
@@ -53,9 +54,7 @@
 				"*://*.vit.ac.in/*"
 			],
 			"resources": [
-				"js/captcha/weights.json",
-				"js/darkmode.css",
-				"js/darkmodecc.css"
+				"js/captcha/weights.json"
 			]
 		}
 	],

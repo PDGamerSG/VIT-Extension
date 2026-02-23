@@ -397,24 +397,33 @@ const addSemesterFilter = () => {
     btn.type = "button";
     btn.textContent = text;
     btn.dataset.semKey = key;
+
+    // Style mimicking DARK MODE/ui/stylesheet-editor/style.css
     Object.assign(btn.style, {
-      padding: "6px 18px",
-      borderRadius: "6px",
+      padding: "4px 12px",
+      marginRight: "8px",
+      borderRadius: "4px",
       fontSize: "13px",
-      fontWeight: "600",
       cursor: "pointer",
-      transition: "all 0.15s ease",
       outline: "none",
-      border: "none",
-      background: "#e2e8f0",
-      color: "#475569",
+      border: "1px solid #316e7d",
+      backgroundColor: "#141e24",
+      color: "#ffffff",
+      transition: "background-color 250ms"
     });
+
     btn.addEventListener("mouseenter", () => {
-      if (activeKey !== key) btn.style.background = "#cbd5e1";
+      if (activeKey !== key) {
+        btn.style.backgroundColor = "#193945"; // Hover color
+      }
     });
+
     btn.addEventListener("mouseleave", () => {
-      if (activeKey !== key) btn.style.background = "#e2e8f0";
+      if (activeKey !== key) {
+        btn.style.backgroundColor = "#141e24"; // Default color
+      }
     });
+
     btn.addEventListener("click", () => filterCourses(key));
     filterBar.appendChild(btn);
     buttons.push({ btn, key });
@@ -426,29 +435,28 @@ const addSemesterFilter = () => {
     lastActiveFilter = key; // Persist across re-creations
     buttons.forEach(b => {
       if (b.key === key) {
-        b.btn.style.background = "#1d4ed8";
-        b.btn.style.color = "#fff";
-        b.btn.style.boxShadow = "0 1px 3px rgba(29,78,216,0.3)";
+        // Active state
+        b.btn.style.backgroundColor = "#316e7d"; // Active highlight
+        b.btn.style.fontWeight = "bold";
       } else {
-        b.btn.style.background = "#e2e8f0";
-        b.btn.style.color = "#475569";
-        b.btn.style.boxShadow = "none";
+        // Inactive state
+        b.btn.style.backgroundColor = "#141e24";
+        b.btn.style.fontWeight = "normal";
       }
     });
   };
 
   // Create buttons
   createBtn("All Semesters", "all");
-  if (fallOptions.length > 0) createBtn("🍂 Fall (" + fallOptions.length + ")", "fall");
-  if (winterOptions.length > 0) createBtn("❄️ Winter (" + winterOptions.length + ")", "winter");
+  if (fallOptions.length > 0) createBtn("Fall (" + fallOptions.length + ")", "fall");
+  if (winterOptions.length > 0) createBtn("Winter (" + winterOptions.length + ")", "winter");
 
   // Count badge
   const badge = document.createElement("span");
   Object.assign(badge.style, {
     marginLeft: "auto",
     fontSize: "12px",
-    color: "#64748b",
-    fontWeight: "500",
+    color: "#777",
   });
   badge.textContent = courseOptions.length + " total courses";
   filterBar.appendChild(badge);
