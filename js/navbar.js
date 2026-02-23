@@ -131,7 +131,7 @@ const buildNavbar = (items_list) => {
 	// Helper — create a navigation button with original styles
 	const makeBtn = (label, dataUrl) => {
 		if (!dataUrl) return "";
-		return `<button class="btn btn-primary border-primary shadow-none viboot-nav-btn" type="button" style="background:rgba(13,110,253,0);border-style:none;white-space:nowrap;" data-viboot-url="${dataUrl}">${label}</button>`;
+		return `<button class="btn btn-primary border-primary shadow-none viboot-nav-btn" type="button" style="background:rgba(13,110,253,0);border-style:none;white-space:nowrap;height:32px;display:flex;align-items:center;" data-viboot-url="${dataUrl}">${label}</button>`;
 	};
 
 	span.innerHTML =
@@ -158,10 +158,10 @@ const buildNavbar = (items_list) => {
 	const favouriteBtn = document.getElementById("favouriteBtn");
 	if (favouriteBtn) {
 		favouriteBtn.className = "btn btn-primary border-primary shadow-none viboot-nav-btn";
-		favouriteBtn.style.cssText = "background:transparent !important; border:none !important; box-shadow:none !important; white-space:nowrap; padding:4px 8px !important; display:flex; justify-content:center; align-items:center; outline:none !important; color:#e8e8e8 !important;";
+		favouriteBtn.style.cssText = "background:transparent !important; border:none !important; box-shadow:none !important; white-space:nowrap; padding:4px 8px !important; display:flex; justify-content:center; align-items:center; outline:none !important; color:#e8e8e8 !important; height: 32px;";
 		// Enforce fixed matching size on the icon
 		const icon = favouriteBtn.querySelector("i");
-		if (icon) icon.style.cssText = "font-size: 20px !important; position: relative; top: 2px;";
+		if (icon) icon.style.cssText = "font-size: 20px !important; position: relative; top: 0px;";
 		favouriteBtn.style.display = "flex";
 	}
 
@@ -172,7 +172,7 @@ const buildNavbar = (items_list) => {
 	if (originalHomeBtn) {
 		const newHomeBtn = document.createElement("button");
 		newHomeBtn.className = "btn btn-primary border-primary shadow-none viboot-nav-btn";
-		newHomeBtn.style.cssText = "background:rgba(13,110,253,0);border-style:none;white-space:nowrap;padding:4px 8px;display:flex;align-items:center;";
+		newHomeBtn.style.cssText = "background:rgba(13,110,253,0);border-style:none;white-space:nowrap;padding:4px 8px;display:flex;align-items:center;height:32px;";
 		newHomeBtn.innerHTML = originalHomeBtn.innerHTML; // Keep the icon
 		const icon = newHomeBtn.querySelector("i");
 		if (icon) icon.style.cssText = "font-size: 20px !important; position: relative; top: 2px;";
@@ -193,7 +193,7 @@ const buildNavbar = (items_list) => {
 
 	// Create Dark Mode toggle icon
 	const isDark = isDarkModeActive;
-	const darkBtnStyle = "background:transparent !important; border:none !important; box-shadow:none !important; white-space:nowrap; padding:4px 8px; display:flex; justify-content:center; align-items:center; cursor:pointer; outline:none !important; transition:all 0.2s ease;";
+	const darkBtnStyle = "background:transparent !important; border:none !important; box-shadow:none !important; white-space:nowrap; padding:4px 8px; display:flex; justify-content:center; align-items:center; cursor:pointer; outline:none !important; transition:all 0.2s ease; height: 32px;";
 	const darkToggleBtn = document.createElement("button");
 	darkToggleBtn.id = "viboot-dark-toggle";
 	darkToggleBtn.type = "button";
@@ -210,7 +210,7 @@ const buildNavbar = (items_list) => {
 	if (logoutForm) {
 		logoutBtn = document.createElement("button");
 		logoutBtn.className = "btn btn-danger shadow-none viboot-nav-btn";
-		logoutBtn.style.cssText = "background:transparent !important; border:none !important; box-shadow:none !important; white-space:nowrap; padding:4px 8px !important; display:flex; justify-content:center; align-items:center; outline:none !important; transition:all 0.2s ease; cursor:pointer;";
+		logoutBtn.style.cssText = "background:transparent !important; border:none !important; box-shadow:none !important; white-space:nowrap; padding:4px 8px !important; display:flex; justify-content:center; align-items:center; outline:none !important; transition:all 0.2s ease; cursor:pointer; height: 32px;";
 		logoutBtn.innerHTML = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#ff6b6b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="position:relative; top:1px;"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"></path><polyline points="10 17 5 12 10 7"></polyline><line x1="15" y1="12" x2="5" y2="12"></line></svg>';
 		logoutBtn.type = "button";
 		logoutBtn.title = "Sign Out";
@@ -222,24 +222,31 @@ const buildNavbar = (items_list) => {
 		});
 	}
 
-	// Move Dark Mode & Sign Out buttons to the right side next to Reg No
+	// Move Utilities & Reg No into a single aligned group
 	const rightNav = document.querySelector("ul.navbar-nav.ms-auto");
-	if (rightNav) {
+	const userDropdown = document.getElementById("navbarDropdown");
+	const userDropdownLi = userDropdown ? userDropdown.closest("li") : null;
+
+	if (rightNav && userDropdownLi) {
+		// Ensure userDropdownLi is flex and centered
+		userDropdownLi.style.cssText = "display: flex !important; align-items: center !important; gap: 4px;";
+		userDropdownLi.classList.add("d-none", "d-sm-flex");
+
+		// Insert buttons BEFORE the userDropdown
+		if (favouriteBtn) userDropdownLi.insertBefore(favouriteBtn, userDropdownLi.firstChild);
+		userDropdownLi.insertBefore(darkToggleBtn, userDropdown);
+		if (logoutBtn) {
+			// Sign out at the very end
+			userDropdownLi.appendChild(logoutBtn);
+		}
+	} else if (rightNav) {
 		const rightBtnsLi = document.createElement("li");
 		rightBtnsLi.className = "nav-item d-none d-sm-flex";
-		rightBtnsLi.style.cssText = "align-items: center; gap: 4px; margin-right: 12px;";
+		rightBtnsLi.style.cssText = "display: flex !important; align-items: center !important; gap: 4px; margin-right: 12px;";
 		if (favouriteBtn) rightBtnsLi.appendChild(favouriteBtn);
 		rightBtnsLi.appendChild(darkToggleBtn);
 		if (logoutBtn) rightBtnsLi.appendChild(logoutBtn);
-
-		const userDropdown = document.getElementById("navbarDropdown");
-		const userDropdownLi = userDropdown ? userDropdown.closest("li") : null;
-
-		if (userDropdownLi) {
-			rightNav.insertBefore(rightBtnsLi, userDropdownLi);
-		} else {
-			rightNav.appendChild(rightBtnsLi);
-		}
+		rightNav.appendChild(rightBtnsLi);
 	} else {
 		if (favouriteBtn) span.appendChild(favouriteBtn);
 		span.appendChild(darkToggleBtn);
@@ -247,15 +254,14 @@ const buildNavbar = (items_list) => {
 	}
 
 	// Restyle the Reg No text to match our buttons and remove the dropdown caret
-	const userDropdown = document.getElementById("navbarDropdown");
 	if (userDropdown) {
 		userDropdown.className = "btn btn-primary border-primary shadow-none viboot-nav-btn";
-		userDropdown.style.cssText = "background:transparent !important; border:none !important; box-shadow:none !important; white-space:nowrap; padding:4px 8px !important; display:flex; align-items:center; outline:none !important;";
+		userDropdown.style.cssText = "background:transparent !important; border:none !important; box-shadow:none !important; white-space:nowrap; padding:4px 8px !important; display:flex; align-items:center; outline:none !important; height: 32px;";
 
 		const spanText = userDropdown.querySelector("span");
 		if (spanText) {
 			spanText.className = "";
-			spanText.style.cssText = "color: #e8e8e8 !important; font-size: inherit; font-weight: normal;";
+			spanText.style.cssText = "color: #e8e8e8 !important; font-size: 14px !important; font-weight: normal; line-height: 1;";
 		}
 	}
 

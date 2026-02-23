@@ -188,22 +188,32 @@
         }
 
         // ── 4. Create Class Messages card next to Proctor Message ──
-        if (proctorCard && !document.getElementById("vit-ext-class-messages")) {
-            const msgCard = document.createElement("div");
+        let msgBody = document.getElementById("vit-ext-class-messages");
+        let msgCard = msgBody ? msgBody.closest(".card") : null;
+
+        if (proctorCard && !msgCard) {
+            msgCard = document.createElement("div");
             msgCard.className = "card mb-3";
             const msgHeader = document.createElement("div");
             msgHeader.className = "card-header";
             msgHeader.innerHTML = '<span class="fs-6 fontcolor3 fw-bold">Class Messages</span>';
-            const msgBody = document.createElement("div");
+            msgBody = document.createElement("div");
             msgBody.className = "card-body";
             msgBody.id = "vit-ext-class-messages";
             msgBody.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;padding:20px;color:#6c757d;"><span>Loading messages...</span></div>';
             msgCard.appendChild(msgHeader);
             msgCard.appendChild(msgBody);
 
-            // Insert above the CGPA card
-            cgpaCard.insertAdjacentElement("beforebegin", msgCard);
+            // Insert above the CGPA card if it exists, otherwise at the end
+            if (cgpaCard) {
+                cgpaCard.insertAdjacentElement("beforebegin", msgCard);
+            } else {
+                proctorCard.insertAdjacentElement("afterend", msgCard);
+            }
             loadClassMessages(msgBody);
+        } else if (msgCard && cgpaCard && msgCard.nextElementSibling !== cgpaCard) {
+            // Ensure it's correctly positioned if it already exists
+            cgpaCard.insertAdjacentElement("beforebegin", msgCard);
         }
 
         // ── 5. Move Proctor Message + Class Messages below Digital Assignments ──
@@ -269,8 +279,11 @@
     };
 
     // ── Load class messages from VTOP ──
+    let isFetchingMessages = false;
     const loadClassMessages = async (container) => {
+        if (isFetchingMessages) return;
         try {
+            isFetchingMessages = true;
             // Extract CSRF and auth info from the page scripts
             const pageScripts = document.querySelectorAll("script:not([src])");
             let authorizedID = "";
@@ -452,9 +465,8 @@
             if (messages.length === 0) {
                 container.innerHTML = noMsgHtml("No class messages at this time.");
             }
-        } catch (err) {
-            console.error("VIT Extension: Class messages error", err);
-            container.innerHTML = noMsgHtml("Could not load class messages.");
+        } finally {
+            isFetchingMessages = false;
         }
     };
 
@@ -474,30 +486,16 @@
 
     // ── Re-apply logic: remove old marker so customizeDashboard can re-run ──
     const resetAndApply = () => {
-        // Remove old marker (it may have been destroyed by SPA navigation already)
+        // Remove old marker so customizeDashboard can detect it needs to run
         const oldMarker = document.getElementById(MARKER_ID);
         if (oldMarker) oldMarker.remove();
 
-        // Also remove old injected class messages card to avoid duplicates
-        const oldMsgBody = document.getElementById("vit-ext-class-messages");
-        if (oldMsgBody) {
-            const oldMsgCard = oldMsgBody.closest(".card");
-            if (oldMsgCard) oldMsgCard.remove();
-        }
-
-        // Remove old toggle button to avoid duplicates
-        const oldToggle = document.getElementById(TOGGLE_ID);
-        if (oldToggle) oldToggle.remove();
-
-        // Try immediately, then retry a few times for AJAX content
+        // Try immediately, then once after a short delay for AJAX content
         requestAnimationFrame(() => {
             try { customizeDashboard(); } catch (_) { }
         });
-        setTimeout(() => { try { customizeDashboard(); } catch (_) { } }, 300);
-        setTimeout(() => { try { customizeDashboard(); } catch (_) { } }, 600);
-        setTimeout(() => { try { customizeDashboard(); } catch (_) { } }, 1200);
-        setTimeout(() => { try { customizeDashboard(); } catch (_) { } }, 2000);
-        setTimeout(() => { try { customizeDashboard(); } catch (_) { } }, 3000);
+        setTimeout(() => { try { customizeDashboard(); } catch (_) { } }, 500);
+        setTimeout(() => { try { customizeDashboard(); } catch (_) { } }, 1500);
     };
 
     // ── Message listener ──
