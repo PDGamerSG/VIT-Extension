@@ -209,6 +209,26 @@ const buildNavbar = (items_list) => {
 			const spanText = toggleBtn.querySelector("span");
 			if (spanText) spanText.innerText = "More Pins";
 		}
+		// Wire up each pinned link to navigate via the same sidebar-click mechanism
+		originalDropdown.querySelectorAll("a[data-url]").forEach((item) => {
+			item.removeAttribute("onclick");
+			item.addEventListener("click", (e) => {
+				e.preventDefault();
+				e.stopPropagation();
+				const url = item.dataset.url;
+				if (!url) return;
+				// Find and trigger the matching sidebar <a> (outside our navbar)
+				const sidebarLink = Array.from(document.getElementsByTagName("a")).find(
+					(a) => a.dataset.url === url && !a.closest("#vtop-navbar")
+				);
+				if (sidebarLink) {
+					sidebarLink.removeAttribute("onclick");
+					sidebarLink.dispatchEvent(new MouseEvent("click", {
+						view: window, bubbles: true, cancelable: true, buttons: 1
+					}));
+				}
+			});
+		});
 		span.appendChild(originalDropdown);
 	}
 
