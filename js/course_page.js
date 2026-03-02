@@ -427,24 +427,82 @@ chrome.runtime.onMessage.addListener((request) => {
   coursePageObserver.observe(document.body, { childList: true, subtree: true });
 })();
 
-// ── Capture download-btn clicks to send material name to background ──
-// New VTOP UI uses .download-btn[data-fileid] buttons — intercept in capture
-// phase so we can extract the material name before VTOP's handler fires.
+// ── Intercept .download-btn[data-fileid] clicks — fetch file ourselves ──
+// VTOP uses a form POST to serve these files. Calling suggest() in
+// onDeterminingFilename on a POST response causes Chrome to lose the response
+// body (→ 0 KB). Instead we intercept the click, fetch the file with the
+// correct POST params + credentials, create a blob URL, and trigger a named
+// download entirely inside the content script.
 (() => {
   if (document._vitDownloadCaptureAdded) return;
   document._vitDownloadCaptureAdded = true;
-  document.addEventListener("click", (e) => {
+
+  document.addEventListener("click", async (e) => {
     const btn = e.target.closest("button.download-btn[data-fileid]");
     if (!btn) return;
+    // _vitBypass flag lets the fallback re-click bypass our handler
+    if (btn._vitBypass) { btn._vitBypass = false; return; }
+
+    e.stopImmediatePropagation();
+    e.preventDefault();
+
+    const fileId = btn.dataset.fileid;
     const row = btn.closest("tr");
-    if (!row) return;
-    const cells = row.querySelectorAll("td");
-    if (cells.length < 3) return;
-    // Material title is the first span inside the 3rd cell's div
+    const cells = row ? row.querySelectorAll("td") : [];
     const materialSpan = cells[2]?.querySelector("div > span:first-child");
-    const materialName = (materialSpan?.textContent?.trim() || "").replace(/[/:*?"<>|]/g, "_");
-    if (materialName) {
-      chrome.runtime.sendMessage({ message: "set-download-name", name: materialName });
+    const materialName = (materialSpan?.textContent?.trim() || "Material").replace(/[/:*?"<>|\\]/g, "_");
+
+    const authorizedID = document.querySelector('input[name="authorizedID"]')?.value || "";
+    const csrf = document.querySelector('input[name="_csrf"]')?.value || "";
+    const x = new Date().toUTCString();
+
+    const isVtopcc = window.location.href.includes("vtopcc");
+    const base = isVtopcc ? "https://vtopcc.vit.ac.in" : "https://vtop.vit.ac.in";
+    const endpoint = `${base}/vtop/content/downloadCourseMaterialFacultyPdf`;
+
+    try {
+      const body = new URLSearchParams({ fileId, authorizedID, _csrf: csrf, x });
+      const resp = await fetch(endpoint, {
+        method: "POST",
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+        body: body.toString(),
+        credentials: "include",
+      });
+      if (!resp.ok) throw new Error("HTTP " + resp.status);
+
+      const blob = await resp.blob();
+      if (blob.size < 50) throw new Error("Empty response (size=" + blob.size + ")");
+
+      // Derive extension from MIME type or Content-Disposition
+      const mime = blob.type.toLowerCase();
+      let ext = "";
+      if (mime.includes("pdf")) ext = ".pdf";
+      else if (mime.includes("presentationml") || mime.includes("powerpoint")) ext = ".pptx";
+      else if (mime.includes("wordprocessingml") || mime.includes("msword")) ext = ".docx";
+      else if (mime.includes("spreadsheetml") || mime.includes("ms-excel")) ext = ".xlsx";
+      else if (mime.includes("zip")) ext = ".zip";
+      else {
+        const cd = resp.headers.get("content-disposition") || "";
+        const cdMatch = cd.match(/filename[^;=\n]*=\s*["']?([^;"'\n]+)["']?/i);
+        if (cdMatch) {
+          const fn = cdMatch[1].trim();
+          const di = fn.lastIndexOf(".");
+          if (di > 0 && fn.length - di <= 7) ext = fn.substring(di);
+        }
+      }
+
+      const objUrl = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = objUrl;
+      a.download = materialName + ext;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      setTimeout(() => URL.revokeObjectURL(objUrl), 30000);
+    } catch (err) {
+      console.warn("[VTop+] fetch download failed, falling back to VTOP handler:", err);
+      btn._vitBypass = true;
+      btn.click(); // re-dispatch; our handler skips due to _vitBypass
     }
   }, true); // capture phase
 })();
