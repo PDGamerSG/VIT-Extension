@@ -296,74 +296,7 @@
 		const tableContainer = document.createElement("div");
 		tableContainer.id = MARKER_ID + "-body";
 
-		let activeTab = "All";
-
-		const renderTable = (tabKey) => {
-			tableContainer.innerHTML = "";
-			const wrap = document.createElement("div");
-			wrap.className = "es-table-wrap";
-			const table = document.createElement("table");
-			table.className = "es-table";
-
-			// thead
-			const thead = document.createElement("thead");
-			const showExamCol = tabKey === "All";
-			thead.innerHTML = `<tr>
-				<th class="col-no">#</th>
-				<th>Course Code</th>
-				<th>Course Title</th>
-				<th>Type</th>
-				<th>Slot</th>
-				${showExamCol ? "<th>Exam</th>" : ""}
-				<th>Date</th>
-				<th>Session</th>
-				<th>Time</th>
-				<th>Venue / Seat</th>
-			</tr>`;
-			table.appendChild(thead);
-
-			const tbody = document.createElement("tbody");
-			let rowCount = 0;
-
-			if (tabKey === "All") {
-				// Render all sections with section divider rows
-				const SECTION_ORDER = ["FAT", "CAT2", "CAT1"];
-				const otherSections = Object.keys(sections).filter(k => !SECTION_ORDER.includes(k));
-				const orderedKeys = [...SECTION_ORDER.filter(k => sections[k]), ...otherSections.filter(k => sections[k])];
-
-				for (const sKey of orderedKeys) {
-					const exams = sections[sKey] || [];
-					if (!exams.length) continue;
-					// Section divider
-					const divRow = document.createElement("tr");
-					divRow.className = "es-section-row";
-					divRow.innerHTML = `<td colspan="10">${sKey}${isSectionDone(exams) ? " ✓ Done" : ""}</td>`;
-					tbody.appendChild(divRow);
-
-					for (const exam of exams) {
-						tbody.appendChild(makeRow(exam, sKey, true));
-						rowCount++;
-					}
-				}
-			} else {
-				const exams = sections[tabKey] || [];
-				for (const exam of exams) {
-					tbody.appendChild(makeRow(exam, tabKey, false));
-					rowCount++;
-				}
-			}
-
-			if (rowCount === 0) {
-				const emptyRow = document.createElement("tr");
-				emptyRow.innerHTML = `<td colspan="10" class="es-empty">No exams found</td>`;
-				tbody.appendChild(emptyRow);
-			}
-
-			table.appendChild(tbody);
-			wrap.appendChild(table);
-			tableContainer.appendChild(wrap);
-		};
-
+		// ── makeRow defined FIRST (before renderTable uses it) ──────────
 		const makeRow = (exam, sKey, showExamCol) => {
 			const now = new Date(); now.setHours(0, 0, 0, 0);
 			const examDateObj = parseDate(exam.examDate);
@@ -371,7 +304,6 @@
 			const tr = document.createElement("tr");
 			if (isPast) tr.classList.add("past-row");
 
-			// Countdown
 			let cdHtml = "";
 			if (!isPast && exam.examDate) {
 				const cd = getCountdown(exam.examDate);
@@ -383,10 +315,8 @@
 
 			const sKeyLower = sKey.toLowerCase();
 			const typeClass = (exam.courseType || "").toLowerCase();
-
 			const seatParts = [exam.venue, exam.seatLocation, exam.seatNo ? "#" + exam.seatNo : null].filter(Boolean);
 			const seatHtml = seatParts.length ? `<span class="es-seat-info">${seatParts.join(" · ")}</span>` : `<span style="color:#cbd5e1">—</span>`;
-
 			const examBadgeHtml = showExamCol
 				? `<td><span class="es-exam-badge ${sKeyLower}">${sKey}</span></td>` : "";
 
@@ -405,33 +335,100 @@
 			return tr;
 		};
 
-		// Build tab buttons
+		const renderTable = (tabKey) => {
+			tableContainer.innerHTML = "";
+			const wrap = document.createElement("div");
+			wrap.className = "es-table-wrap";
+			const table = document.createElement("table");
+			table.className = "es-table";
+
+			const showExamCol = tabKey === "All";
+			const colCount = showExamCol ? 10 : 9;
+
+			const thead = document.createElement("thead");
+			thead.innerHTML = `<tr>
+				<th class="col-no">#</th>
+				<th>Course Code</th>
+				<th>Course Title</th>
+				<th>Type</th>
+				<th>Slot</th>
+				${showExamCol ? "<th>Exam</th>" : ""}
+				<th>Date</th>
+				<th>Session</th>
+				<th>Time</th>
+				<th>Venue / Seat</th>
+			</tr>`;
+			table.appendChild(thead);
+
+			const tbody = document.createElement("tbody");
+			let rowCount = 0;
+
+			if (tabKey === "All") {
+				const SECTION_ORDER = ["FAT", "CAT2", "CAT1"];
+				const otherSections = Object.keys(sections).filter(k => !SECTION_ORDER.includes(k));
+				const orderedKeys = [...SECTION_ORDER.filter(k => sections[k]), ...otherSections.filter(k => sections[k])];
+
+				for (const sKey of orderedKeys) {
+					const exams = sections[sKey] || [];
+					if (!exams.length) continue;
+					const divRow = document.createElement("tr");
+					divRow.className = "es-section-row";
+					divRow.innerHTML = `<td colspan="${colCount}">${sKey}${isSectionDone(exams) ? " ✓ Done" : ""}</td>`;
+					tbody.appendChild(divRow);
+					for (const exam of exams) {
+						tbody.appendChild(makeRow(exam, sKey, true));
+						rowCount++;
+					}
+				}
+			} else {
+				const exams = sections[tabKey] || [];
+				for (const exam of exams) {
+					tbody.appendChild(makeRow(exam, tabKey, false));
+					rowCount++;
+				}
+			}
+
+			if (rowCount === 0) {
+				const emptyRow = document.createElement("tr");
+				emptyRow.innerHTML = `<td colspan="${colCount}" class="es-empty">No exams found</td>`;
+				tbody.appendChild(emptyRow);
+			}
+
+			table.appendChild(tbody);
+			wrap.appendChild(table);
+			tableContainer.appendChild(wrap);
+		};
+
+		// Build tab buttons — use event delegation to avoid any closure issues
 		for (const tabKey of TAB_ORDER) {
 			if (tabKey !== "All" && !sections[tabKey]) continue;
 
 			const btn = document.createElement("button");
 			const tabClass = tabKey === "FAT" ? "fat-tab" : tabKey === "CAT2" ? "cat2-tab" : tabKey === "CAT1" ? "cat1-tab" : "";
-			btn.className = `es-tab ${tabClass}${tabKey === activeTab ? " active" : ""}`;
+			btn.className = `es-tab${tabClass ? " " + tabClass : ""}${tabKey === "All" ? " active" : ""}`;
 			btn.dataset.tab = tabKey;
 
 			const count = tabKey === "All"
 				? Object.values(sections).reduce((s, a) => s + a.length, 0)
 				: (sections[tabKey] || []).length;
-
 			const isDone = tabKey !== "All" && sections[tabKey] && isSectionDone(sections[tabKey]);
 			btn.innerHTML = `${tabKey}<span class="es-tab-count">${count}</span>${isDone ? '<span class="es-tab-done">✓</span>' : ""}`;
-
-			btn.addEventListener("click", () => {
-				activeTab = tabKey;
-				tabBar.querySelectorAll(".es-tab").forEach(b => b.classList.remove("active"));
-				btn.classList.add("active");
-				renderTable(tabKey);
-			});
 			tabBar.appendChild(btn);
 		}
 
+		// Single delegated click handler on the tab bar
+		tabBar.addEventListener("click", (e) => {
+			const btn = e.target.closest(".es-tab");
+			if (!btn) return;
+			const tabKey = btn.dataset.tab;
+			if (!tabKey) return;
+			tabBar.querySelectorAll(".es-tab").forEach(b => b.classList.remove("active"));
+			btn.classList.add("active");
+			renderTable(tabKey);
+		});
+
 		wrapper.appendChild(tabBar);
-		renderTable(activeTab);
+		renderTable("All");
 		wrapper.appendChild(tableContainer);
 
 		return wrapper;
@@ -446,6 +443,14 @@
 
 		const sections = parseExamSchedule();
 		if (!sections || Object.keys(sections).length === 0) return;
+
+		// Remove "Exam Reporting Time" notice from the VTOP DOM
+		document.querySelectorAll(".ps-4 span, .form-group span").forEach(span => {
+			if (span.textContent.includes("Exam Reporting Time") || span.textContent.includes("Reporting Time")) {
+				const parent = span.closest(".ps-4") || span.closest(".form-group") || span.parentElement;
+				if (parent) parent.style.display = "none";
+			}
+		});
 
 		const newView = renderExamSchedule(sections);
 
