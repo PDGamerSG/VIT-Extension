@@ -2,10 +2,14 @@ let course = "";
 let faculty_slot = "";
 let module_wise = true;
 let data = {};
+let pendingDownloadName = null;
 
 chrome.runtime.onMessage.addListener((request) => {
   if (request.message === "table_name" || request.message === "fac_upload_name") {
     // File naming preference (unused in current flow but kept for future use)
+  }
+  if (request.message === "set-download-name") {
+    pendingDownloadName = request.name;
   }
   if (request.message === "course-page-data") {
     data = request.data;
@@ -55,7 +59,7 @@ chrome.downloads.onDeterminingFilename.addListener((item, suggest) => {
       view = "Assignment";
     } else if (fileUrlLower.includes("coursesyllabusdownload")) {
       view = "Syllabus";
-    } else if (fileUrlLower.includes("downloadpdf")) {
+    } else if (fileUrlLower.includes("downloadpdf") || fileUrlLower.includes("facultypdf") || fileUrlLower.includes("downloadcoursemat")) {
       view = "Course";
     } else {
       view = "Unknown";
@@ -90,8 +94,9 @@ chrome.downloads.onDeterminingFilename.addListener((item, suggest) => {
       } else {
         // VTOP server filename format: SEMESTER_COURSEID_TYPE_YYYY-MM-DD_MaterialName
         const dateMatch = nameNoExt.match(/_\d{4}-\d{2}-\d{2}_(.+)$/);
-        const derivedName = dateMatch ? dateMatch[1] : null;
+        const derivedName = pendingDownloadName || (dateMatch ? dateMatch[1] : null);
         suggest({ filename: derivedName ? derivedName.replace(/[/:*?"<>|\\]/g, "_") + fileExt : item.filename });
+        pendingDownloadName = null;
       }
       course = "";
       faculty_slot = "";

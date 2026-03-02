@@ -447,10 +447,15 @@ chrome.runtime.onMessage.addListener((request) => {
     e.preventDefault();
 
     const fileId = btn.dataset.fileid;
-    const row = btn.closest("tr");
-    const cells = row ? row.querySelectorAll("td") : [];
-    const materialSpan = cells[2]?.querySelector("div > span:first-child");
-    const materialName = (materialSpan?.textContent?.trim() || "Material").replace(/[/:*?"<>|\\]/g, "_");
+
+    // Navigate from the Download <td> backwards to get the Material Detail <td>.
+    // Can't use cells[2] because Course Detail uses rowspan — some rows have fewer <td>s.
+    const downloadTd = btn.closest("td");
+    const uploadedByTd = downloadTd?.previousElementSibling;
+    const materialTd = uploadedByTd?.previousElementSibling;
+    // First <span> in the Material Detail cell contains the material title
+    const rawName = materialTd?.querySelector("span")?.textContent?.trim() || "";
+    const materialName = (rawName || "Material").replace(/[/:*?"<>|\\]/g, "_");
 
     const authorizedID = document.querySelector('input[name="authorizedID"]')?.value || "";
     const csrf = document.querySelector('input[name="_csrf"]')?.value || "";
@@ -501,6 +506,10 @@ chrome.runtime.onMessage.addListener((request) => {
       setTimeout(() => URL.revokeObjectURL(objUrl), 30000);
     } catch (err) {
       console.warn("[VTop+] fetch download failed, falling back to VTOP handler:", err);
+      // Tell background.js the material name so it can rename on onDeterminingFilename
+      if (materialName && materialName !== "Material") {
+        chrome.runtime.sendMessage({ message: "set-download-name", name: materialName });
+      }
       btn._vitBypass = true;
       btn.click(); // re-dispatch; our handler skips due to _vitBypass
     }
