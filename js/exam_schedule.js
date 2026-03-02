@@ -399,11 +399,12 @@
 			tableContainer.appendChild(wrap);
 		};
 
-		// Build tab buttons — use event delegation to avoid any closure issues
+		// Build tab buttons — type="button" REQUIRED to prevent form submission
 		for (const tabKey of TAB_ORDER) {
 			if (tabKey !== "All" && !sections[tabKey]) continue;
 
 			const btn = document.createElement("button");
+			btn.type = "button"; // prevent <form> submit on click
 			const tabClass = tabKey === "FAT" ? "fat-tab" : tabKey === "CAT2" ? "cat2-tab" : tabKey === "CAT1" ? "cat1-tab" : "";
 			btn.className = `es-tab${tabClass ? " " + tabClass : ""}${tabKey === "All" ? " active" : ""}`;
 			btn.dataset.tab = tabKey;
@@ -418,6 +419,8 @@
 
 		// Single delegated click handler on the tab bar
 		tabBar.addEventListener("click", (e) => {
+			e.preventDefault();
+			e.stopPropagation();
 			const btn = e.target.closest(".es-tab");
 			if (!btn) return;
 			const tabKey = btn.dataset.tab;
