@@ -89,21 +89,16 @@ chrome.downloads.onDeterminingFilename.addListener((item, suggest) => {
 
       const ld = data && data.link_data && data.link_data[0];
       if (ld) {
-        let filename = "VIT Downloads/";
-        if (ld.folder_title && module_wise) {
-          filename += ld.folder_title.replace(/[/:*?"<>|]/g, "_") + "/" + (ld.title || "file") + fileExt;
-        } else {
-          filename += (ld.title || "file") + fileExt;
-        }
+        const filename = (ld.title || "file") + fileExt;
         suggest({ filename: filename });
       } else {
         // VTOP server filename format: SEMESTER_COURSEID_TYPE_YYYY-MM-DD_MaterialName
         const dateMatch = nameNoExt.match(/_\d{4}-\d{2}-\d{2}_(.+)$/);
         const derivedName = dateMatch ? dateMatch[1] : (pendingDownloadName || null);
         if (derivedName) {
-          suggest({ filename: "VIT Downloads/" + derivedName.replace(/[/:*?"<>|\\]/g, "_") + fileExt });
+          suggest({ filename: derivedName.replace(/[/:*?"<>|\\]/g, "_") + fileExt });
         } else {
-          suggest({ filename: "VIT Downloads/Other Downloads/" + item.filename });
+          suggest({ filename: item.filename });
         }
         pendingDownloadName = null;
       }
@@ -116,16 +111,16 @@ chrome.downloads.onDeterminingFilename.addListener((item, suggest) => {
       if (item.url.includes("doDownloadQuestion")) file_name += " QP ";
       else if (item.url.includes("downloadSTudentDA")) file_name += " Submission ";
       else {
-        suggest({ filename: "VIT Downloads/Other Downloads/Assignments/" + item.filename });
+        suggest({ filename: item.filename });
         return;
       }
       file_name += item.filename.slice(-5, -4);
-      suggest({ filename: "VIT Downloads/Other Downloads/Assignments/" + file_name + file_extension });
+      suggest({ filename: file_name + file_extension });
     } else if (view == "Syllabus") {
       let file_extension = item.filename.replace(/([^_]*_){8}/, "").split(".");
       file_extension = "." + file_extension[file_extension.length - 1];
       let syllabus_course = item.filename.split("_")[1];
-      suggest({ filename: "VIT Downloads/Other Downloads/Syllabus/" + syllabus_course + file_extension });
+      suggest({ filename: syllabus_course + file_extension });
     }
   }
 });
