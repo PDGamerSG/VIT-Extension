@@ -420,3 +420,25 @@ chrome.runtime.onMessage.addListener((request) => {
   });
   coursePageObserver.observe(document.body, { childList: true, subtree: true });
 })();
+
+// ── Capture download-btn clicks to send material name to background ──
+// New VTOP UI uses .download-btn[data-fileid] buttons — intercept in capture
+// phase so we can extract the material name before VTOP's handler fires.
+(() => {
+  if (document._vitDownloadCaptureAdded) return;
+  document._vitDownloadCaptureAdded = true;
+  document.addEventListener("click", (e) => {
+    const btn = e.target.closest("button.download-btn[data-fileid]");
+    if (!btn) return;
+    const row = btn.closest("tr");
+    if (!row) return;
+    const cells = row.querySelectorAll("td");
+    if (cells.length < 3) return;
+    // Material title is the first span inside the 3rd cell's div
+    const materialSpan = cells[2]?.querySelector("div > span:first-child");
+    const materialName = (materialSpan?.textContent?.trim() || "").replace(/[/:*?"<>|]/g, "_");
+    if (materialName) {
+      chrome.runtime.sendMessage({ message: "set-download-name", name: materialName });
+    }
+  }, true); // capture phase
+})();

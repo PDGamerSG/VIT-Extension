@@ -2,10 +2,14 @@ let course = "";
 let faculty_slot = "";
 let module_wise = true;
 let data = {};
+let pendingDownloadName = null; // set by content script before .download-btn download
 
 chrome.runtime.onMessage.addListener((request) => {
   if (request.message === "table_name" || request.message === "fac_upload_name") {
     // File naming preference (unused in current flow but kept for future use)
+  }
+  if (request.message === "set-download-name") {
+    pendingDownloadName = request.name;
   }
   if (request.message === "course-page-data") {
     data = request.data;
@@ -55,7 +59,7 @@ chrome.downloads.onDeterminingFilename.addListener((item, suggest) => {
       view = "Assignment";
     } else if (fileUrlLower.includes("coursesyllabusdownload")) {
       view = "Syllabus";
-    } else if (fileUrlLower.includes("downloadpdf")) {
+    } else if (fileUrlLower.includes("downloadpdf") || fileUrlLower.includes("facultypdf") || fileUrlLower.includes("downloadcoursemat")) {
       view = "Course";
     } else {
       view = "Unknown";
@@ -72,12 +76,15 @@ chrome.downloads.onDeterminingFilename.addListener((item, suggest) => {
           filename += (ld.title || "file") + fileExt;
         }
         suggest({ filename: filename });
+      } else if (pendingDownloadName) {
+        suggest({ filename: "VIT Downloads/" + pendingDownloadName + fileExt });
+        pendingDownloadName = null;
       } else {
         suggest({ filename: "VIT Downloads/Other Downloads/" + item.filename });
       }
       course = "";
       faculty_slot = "";
-    } else if (view == "Assignment") {
+    }else if (view == "Assignment") {
       let file_extension = item.filename.replace(/([^_]*_){8}/, "").split(".");
       file_extension = "." + file_extension[file_extension.length - 1];
       let file_name = course;
