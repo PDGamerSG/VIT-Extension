@@ -76,11 +76,18 @@ chrome.downloads.onDeterminingFilename.addListener((item, suggest) => {
           filename += (ld.title || "file") + fileExt;
         }
         suggest({ filename: filename });
-      } else if (pendingDownloadName) {
-        suggest({ filename: "VIT Downloads/" + pendingDownloadName + fileExt });
-        pendingDownloadName = null;
       } else {
-        suggest({ filename: "VIT Downloads/Other Downloads/" + item.filename });
+        // VTOP server filename format: SEMESTER_COURSEID_TYPE_YYYY-MM-DD_MaterialName.ext
+        // Extract just the MaterialName part after the date
+        const nameNoExt = item.filename.replace(/\.[^.]+$/, "");
+        const dateMatch = nameNoExt.match(/_\d{4}-\d{2}-\d{2}_(.+)$/);
+        const derivedName = dateMatch ? dateMatch[1] : (pendingDownloadName || null);
+        if (derivedName) {
+          suggest({ filename: "VIT Downloads/" + derivedName.replace(/[/:*?"<>|]/g, "_") + fileExt });
+        } else {
+          suggest({ filename: "VIT Downloads/Other Downloads/" + item.filename });
+        }
+        pendingDownloadName = null;
       }
       course = "";
       faculty_slot = "";

@@ -102,7 +102,12 @@ const download_files = (type) => {
 
 
 const modify_page = () => {
-  const { course, faculty_slot } = course_details();
+  // course_details() may throw if the detail table hasn't loaded yet;
+  // defer it — it's only needed in ref_material click handlers below.
+  let course = "", faculty_slot = "";
+  const getCourseInfo = () => {
+    try { return course_details(); } catch (e) { return { course: "", faculty_slot: "" }; }
+  };
 
   /* HIDE/SHOW DETAIL FIELDSET */
   const detailFieldset = Array.from(document.querySelectorAll("fieldset")).find(
@@ -165,10 +170,11 @@ const modify_page = () => {
   ref_material.forEach((elem, index) => {
     elem.addEventListener("click", (event) => {
       event.preventDefault();
+      const { course: c, faculty_slot: fs } = getCourseInfo();
       return trigger_download({
         link_data: [get_link_details(elem, index)],
-        course,
-        faculty_slot,
+        course: c,
+        faculty_slot: fs,
         module_wise: moduleWise,
       });
     });
