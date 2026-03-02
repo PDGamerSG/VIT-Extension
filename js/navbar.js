@@ -114,9 +114,25 @@ const hideNavbarClutter = () => {
 	const mobileProfileImg = document.querySelector(".navbar-nav img.img_stamp_size");
 	if (mobileProfileImg && mobileProfileImg.closest("li")) hideAggressively(mobileProfileImg.closest("li"));
 
-	// Hide the VIT logo from navbar
+	// Make VIT logo click navigate to home page
 	const vitLogo = document.querySelector("a.navbar-brand");
-	if (vitLogo) hideAggressively(vitLogo);
+	if (vitLogo) {
+		vitLogo.style.cssText = ""; // clear any previous hide styles
+		vitLogo.removeAttribute("href");
+		vitLogo.style.cursor = "pointer";
+		vitLogo.addEventListener("click", (e) => {
+			e.preventDefault();
+			e.stopPropagation();
+			const homeLink = document.querySelector("#quickLinks a[onclick*='home'], a[onclick*='goHomePage']");
+			if (homeLink) {
+				homeLink.dispatchEvent(new MouseEvent("click", { bubbles: true, cancelable: true }));
+			} else {
+				const isVtopcc = window.location.href.includes("vtopcc");
+				const base = isVtopcc ? "https://vtopcc.vit.ac.in" : "https://vtop.vit.ac.in";
+				window.location.href = base + "/vtop/home";
+			}
+		});
+	}
 
 	// Compact the navbar height for a slimmer profile
 	const mainNav = document.querySelector("nav.navbar");
