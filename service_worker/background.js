@@ -62,19 +62,21 @@ chrome.downloads.onDeterminingFilename.addListener((item, suggest) => {
     }
 
     if (view == "Course") {
-      let file_extension = item.filename.replace(/([^_]*_){8}/, "").split(".");
-      file_extension = "." + file_extension[file_extension.length - 1];
-      if (course != "" && faculty_slot != "") {
-        let filename = "VIT Downloads/" + course + "/" + faculty_slot + "/";
-        if (data.link_data[0]["folder_title"] != undefined) {
-          if (module_wise) filename += (data.link_data[0]["folder_title"] + "/" + data.link_data[0]["title"] + file_extension);
-          else filename += (data.link_data[0]["title"] + file_extension);
+      const fileExt = "." + item.filename.split(".").pop();
+      const ld = data && data.link_data && data.link_data[0];
+      if (ld) {
+        let filename = "VIT Downloads/";
+        if (ld.folder_title && module_wise) {
+          filename += ld.folder_title.replace(/[/:*?"<>|]/g, "_") + "/" + (ld.title || "file") + fileExt;
+        } else {
+          filename += (ld.title || "file") + fileExt;
         }
-        else filename += item.filename;
         suggest({ filename: filename });
-        course = "";
-        faculty_slot = "";
-      } else suggest({ filename: "VIT Downloads/Other Downloads/" + item.filename });
+      } else {
+        suggest({ filename: "VIT Downloads/Other Downloads/" + item.filename });
+      }
+      course = "";
+      faculty_slot = "";
     } else if (view == "Assignment") {
       let file_extension = item.filename.replace(/([^_]*_){8}/, "").split(".");
       file_extension = "." + file_extension[file_extension.length - 1];
@@ -135,6 +137,14 @@ chrome.webRequest.onCompleted.addListener(
       returnMessage("dashboard");
     } else if (link.indexOf("processViewTimeTable") !== -1) {
       returnMessage("time_table");
+    } else if (link.indexOf("processStudExamSchedule") !== -1) {
+      // Form submitted — results loaded
+      await sleep(400);
+      returnMessage("exam_schedule");
+    } else if (link.indexOf("StudExamSchedule") !== -1 && link.indexOf("process") === -1) {
+      // Initial page navigation to exam schedule
+      await sleep(800);
+      returnMessage("exam_schedule");
     }
   },
   {

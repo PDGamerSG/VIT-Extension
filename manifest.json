@@ -43,7 +43,8 @@
 				"js/captcha/captchaparser.js",
 				"js/navbarcc.js",
 				"js/time_table.js",
-				"js/dashboard.js"
+				"js/dashboard.js",
+				"js/exam_schedule.js"
 			]
 		}
 	],

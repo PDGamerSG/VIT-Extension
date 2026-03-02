@@ -10,14 +10,55 @@ const applyDarkMode = () => {
 	isDarkModeActive = true;
 	DarkReader.enable({
 		brightness: 100,
-		contrast: 100,
-		sepia: 0
+		contrast: 90,
+		sepia: 10
 	});
+	// Apply VTOP-specific overrides after DarkReader processes the page
+	setTimeout(() => {
+		let el = document.getElementById("vit-ext-dark-override");
+		if (!el) {
+			el = document.createElement("style");
+			el.id = "vit-ext-dark-override";
+			document.head.appendChild(el);
+		}
+		el.textContent = `
+			/* 100xdevs-style neutral dark — no blue tint */
+			body, html { background: #0d0d0d !important; color: #e8e8e8 !important; }
+			nav.navbar { background: #111111 !important; border-bottom: 1px solid rgba(255,255,255,0.06) !important; box-shadow: none !important; }
+			.VTopHeaderStyle, .navbar-text, .navbar-text * { color: #e8e8e8 !important; }
+			.card { background: #161616 !important; border-color: rgba(255,255,255,0.08) !important; box-shadow: none !important; }
+			.card-header { background: #1c1c1c !important; border-color: rgba(255,255,255,0.06) !important; }
+			.card-header .fw-bold, .card-header span.fs-6, .card-header h5 { color: #999 !important; }
+			.card-body { color: #d0d0d0 !important; }
+			thead th { background: #1c1c1c !important; color: #777 !important; border-color: rgba(255,255,255,0.05) !important; }
+			tbody tr { border-color: rgba(255,255,255,0.04) !important; }
+			tbody tr:nth-child(even) { background-color: #141414 !important; }
+			tbody tr:nth-child(odd) { background-color: #111111 !important; }
+			tbody td { color: #ccc !important; border-color: rgba(255,255,255,0.04) !important; }
+			.form-control, select, .form-select, input[type="text"], input[type="password"], textarea {
+				background: #1c1c1c !important; color: #e8e8e8 !important; border-color: rgba(255,255,255,0.12) !important; box-shadow: none !important;
+			}
+			.btn-primary { background: transparent !important; border: 1px solid rgba(255,255,255,0.2) !important; color: #e8e8e8 !important; box-shadow: none !important; }
+			.btn-primary:hover { background: rgba(255,255,255,0.06) !important; }
+			.btn { box-shadow: none !important; }
+			.alert { background: #161616 !important; border-color: rgba(255,255,255,0.08) !important; color: #c8c8c8 !important; }
+			a:not(.vtop-nav-btn):not(.btn) { color: #7eb3d0 !important; }
+			.panel, .panel-body, .tab-content, .tab-pane { background: #111111 !important; }
+			#outer-wrap, #inner-wrap, .container, .container-fluid { background: #0d0d0d !important; }
+			.table { color: #ccc !important; border-color: rgba(255,255,255,0.05) !important; }
+			#vit-ext-timetable table { background: #161616 !important; border-color: rgba(255,255,255,0.06) !important; }
+			#vit-ext-timetable th { background: #1c1c1c !important; color: #777 !important; border-color: rgba(255,255,255,0.05) !important; }
+			#vit-ext-timetable td:first-child { background: #1c1c1c !important; color: #777 !important; }
+			#vit-ext-timetable .tt-title { color: #e8e8e8 !important; }
+		`;
+	}, 150);
 };
 
 const removeDarkMode = () => {
 	isDarkModeActive = false;
 	DarkReader.disable();
+	const el = document.getElementById("vit-ext-dark-override");
+	if (el) el.remove();
 };
 
 const toggleDarkMode = () => {
@@ -53,7 +94,7 @@ chrome.storage.sync.get(["vtopDarkMode"], (result) => {
 // ---- Hide unwanted VTOP navbar clutter ----
 
 const hideNavbarClutter = () => {
-	// We MUST KEEP the elements in the DOM (so the home button clone can proxy clicks to it);
+	// We MUST KEEP some elements in the DOM (so proxy clicks work);
 	// thus, we aggressively hide them with CSS. Bootstrap's d-inline-block uses !important
 	// so we MUST append display:none!important to all targets.
 
@@ -73,7 +114,7 @@ const hideNavbarClutter = () => {
 	const mobileProfileImg = document.querySelector(".navbar-nav img.img_stamp_size");
 	if (mobileProfileImg && mobileProfileImg.closest("li")) hideAggressively(mobileProfileImg.closest("li"));
 
-	// Hide the VIT Logo Emblem
+	// Hide the VIT logo from navbar
 	const vitLogo = document.querySelector("a.navbar-brand");
 	if (vitLogo) hideAggressively(vitLogo);
 
@@ -126,7 +167,7 @@ const buildNavbar = (items_list) => {
 
 	const span = document.createElement("div");
 	span.id = "vtop-navbar";
-	span.style.cssText = "display:flex;align-items:center;gap:4px;padding:0 8px;";
+	span.style.cssText = "display:flex;align-items:center;gap:4px;padding:0 8px;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;flex-shrink:1;min-width:0;";
 
 	// Helper — create a navigation button with original styles
 	const makeBtn = (label, dataUrl) => {
@@ -167,35 +208,6 @@ const buildNavbar = (items_list) => {
 
 	// Dark mode toggle will be generated as a DOM node and added to the right side navigation area
 
-	// Recreate home button to avoid CSP inline-execution errors when moving elements with `onclick="javascript:..."`
-	const originalHomeBtn = document.querySelector("#quickLinks a[onclick*='home']");
-	if (originalHomeBtn) {
-		const newHomeBtn = document.createElement("button");
-		newHomeBtn.className = "btn btn-primary border-primary shadow-none vtop-nav-btn";
-		newHomeBtn.style.cssText = "background:rgba(13,110,253,0);border-style:none;white-space:nowrap;padding:4px 8px;display:flex;align-items:center;height:32px;";
-		newHomeBtn.innerHTML = originalHomeBtn.innerHTML; // Keep the icon
-		const icon = newHomeBtn.querySelector("i");
-		if (icon) icon.style.cssText = "font-size: 20px !important; position: relative; top: 2px;";
-		newHomeBtn.type = "button";
-		newHomeBtn.title = "Home";
-
-		newHomeBtn.addEventListener("click", () => {
-			// Strip inline handlers to avoid CSP violations
-			originalHomeBtn.removeAttribute("onclick");
-			if (originalHomeBtn.href && originalHomeBtn.href.startsWith("javascript:")) {
-				originalHomeBtn.removeAttribute("href");
-			}
-			originalHomeBtn.dispatchEvent(new MouseEvent("click", {
-				view: window,
-				bubbles: true,
-				cancelable: true,
-				buttons: 1
-			}));
-		});
-
-		span.insertBefore(newHomeBtn, span.firstChild);
-	}
-
 	// Create Dark Mode toggle icon
 	const isDark = isDarkModeActive;
 	const darkBtnStyle = "background:transparent !important; border:none !important; box-shadow:none !important; white-space:nowrap; padding:4px 8px; display:flex; justify-content:center; align-items:center; cursor:pointer; outline:none !important; transition:all 0.2s ease; height: 32px;";
@@ -235,7 +247,8 @@ const buildNavbar = (items_list) => {
 	if (rightNav && userDropdownLi) {
 		// Ensure userDropdownLi is flex and centered
 		userDropdownLi.style.cssText = "display: flex !important; align-items: center !important; gap: 4px;";
-		userDropdownLi.classList.add("d-none", "d-sm-flex");
+		userDropdownLi.classList.remove("d-none", "d-sm-flex", "d-md-flex", "d-lg-flex");
+		userDropdownLi.style.setProperty("display", "flex", "important");
 
 		// Insert buttons BEFORE the userDropdown
 		if (favouriteBtn) userDropdownLi.insertBefore(favouriteBtn, userDropdownLi.firstChild);
@@ -246,7 +259,7 @@ const buildNavbar = (items_list) => {
 		}
 	} else if (rightNav) {
 		const rightBtnsLi = document.createElement("li");
-		rightBtnsLi.className = "nav-item d-none d-sm-flex";
+		rightBtnsLi.className = "nav-item d-flex";
 		rightBtnsLi.style.cssText = "display: flex !important; align-items: center !important; gap: 4px; margin-right: 12px;";
 		if (favouriteBtn) rightBtnsLi.appendChild(favouriteBtn);
 		rightBtnsLi.appendChild(darkToggleBtn);
@@ -271,6 +284,23 @@ const buildNavbar = (items_list) => {
 	}
 
 	nav[0].insertBefore(span, nav[0].children[0]);
+
+	// Inject mobile responsive styles
+	if (!document.getElementById("vit-ext-navbar-mobile-styles")) {
+		const mobileStyle = document.createElement("style");
+		mobileStyle.id = "vit-ext-navbar-mobile-styles";
+		mobileStyle.textContent = `
+			#vtop-navbar::-webkit-scrollbar { display: none; }
+			#vtop-navbar { scrollbar-width: none; }
+			@media (max-width: 576px) {
+				#vtop-navbar { max-width: calc(100vw - 120px) !important; }
+				nav.navbar { flex-wrap: nowrap !important; }
+				.collapse.navbar-collapse { flex-grow: 0 !important; }
+			}
+			ul.navbar-nav.ms-auto { flex-wrap: nowrap !important; }
+		`;
+		document.head.appendChild(mobileStyle);
+	}
 
 	span.querySelectorAll(".vtop-nav-btn").forEach((btn) => {
 		btn.addEventListener("click", () => {

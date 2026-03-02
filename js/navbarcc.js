@@ -8,14 +8,39 @@ const applyDarkModeCC = () => {
   isDarkModeActiveCC = true;
   DarkReader.enable({
     brightness: 100,
-    contrast: 100,
-    sepia: 0
+    contrast: 90,
+    sepia: 10
   });
+  setTimeout(() => {
+    let el = document.getElementById("vit-ext-dark-override");
+    if (!el) {
+      el = document.createElement("style");
+      el.id = "vit-ext-dark-override";
+      document.head.appendChild(el);
+    }
+    el.textContent = `
+      /* 100xdevs-style neutral dark */
+      body, html { background: #0d0d0d !important; color: #e8e8e8 !important; }
+      nav.navbar, .navbar { background: #111111 !important; border-bottom: 1px solid rgba(255,255,255,0.06) !important; box-shadow: none !important; }
+      .card { background: #161616 !important; border-color: rgba(255,255,255,0.08) !important; box-shadow: none !important; }
+      .card-header { background: #1c1c1c !important; border-color: rgba(255,255,255,0.06) !important; }
+      thead th { background: #1c1c1c !important; color: #777 !important; border-color: rgba(255,255,255,0.05) !important; }
+      tbody tr:nth-child(even) { background-color: #141414 !important; }
+      tbody tr:nth-child(odd) { background-color: #111111 !important; }
+      tbody td { color: #ccc !important; border-color: rgba(255,255,255,0.04) !important; }
+      .form-control, select, .form-select { background: #1c1c1c !important; color: #e8e8e8 !important; border-color: rgba(255,255,255,0.12) !important; }
+      .btn-primary { background: transparent !important; border: 1px solid rgba(255,255,255,0.2) !important; color: #e8e8e8 !important; box-shadow: none !important; }
+      .btn-primary:hover { background: rgba(255,255,255,0.06) !important; }
+      .btn { box-shadow: none !important; }
+    `;
+  }, 150);
 };
 
 const removeDarkModeCC = () => {
   isDarkModeActiveCC = false;
   DarkReader.disable();
+  const el = document.getElementById("vit-ext-dark-override");
+  if (el) el.remove();
 };
 
 const toggleDarkModeCC = () => {
@@ -71,6 +96,9 @@ let nav_barcc = () => {
     span.style.paddingTop = "20px";
     span.style.display = "flex";
     span.style.alignItems = "center";
+    span.style.overflowX = "auto";
+    span.style.webkitOverflowScrolling = "touch";
+    span.style.scrollbarWidth = "none";
 
     // Create nav links as buttons (CSP-safe, no javascript: URLs)
     navItems.forEach(item => {

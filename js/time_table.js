@@ -146,18 +146,18 @@
 	// logical blocks. Each entry: { label, theoryIdx, labIdx }
 	// theoryIdx/labIdx = index into the theory/lab cell arrays for that day
 	const timeRows = [
-		{ label: "8:00 - 8:50", theoryIdx: 0, labIdxStart: 0, labIdxEnd: 0 },
-		{ label: "9:00 - 9:50", theoryIdx: 1, labIdxStart: 1, labIdxEnd: 1 },
-		{ label: "10:00 - 10:50", theoryIdx: 2, labIdxStart: 2, labIdxEnd: 2 },
-		{ label: "11:00 - 11:50", theoryIdx: 3, labIdxStart: 3, labIdxEnd: 3 },
-		{ label: "12:00 - 12:50", theoryIdx: 4, labIdxStart: 4, labIdxEnd: 5 },
+		{ label: "8:00 - 8:50",   theoryIdx: 0,    labIdxStart: 0,    labIdxEnd: 0 },
+		{ label: "9:00 - 9:50",   theoryIdx: 1,    labIdxStart: 1,    labIdxEnd: 1 },
+		{ label: "10:00 - 10:50", theoryIdx: 2,    labIdxStart: 2,    labIdxEnd: 2 },
+		{ label: "11:00 - 11:50", theoryIdx: 3,    labIdxStart: 3,    labIdxEnd: 3 },
+		{ label: "12:00 - 12:50", theoryIdx: 4,    labIdxStart: 4,    labIdxEnd: 5 },
 		{ label: "LUNCH", isLunch: true },
-		{ label: "2:00 - 2:50", theoryIdx: 7, labIdxStart: 7, labIdxEnd: 7 },
-		{ label: "3:00 - 3:50", theoryIdx: 8, labIdxStart: 8, labIdxEnd: 8 },
-		{ label: "4:00 - 4:50", theoryIdx: 9, labIdxStart: 9, labIdxEnd: 9 },
-		{ label: "5:00 - 5:50", theoryIdx: 10, labIdxStart: 10, labIdxEnd: 10 },
-		{ label: "6:00 - 6:50", theoryIdx: 11, labIdxStart: 11, labIdxEnd: 11 },
-		{ label: "7:00 - 7:50", theoryIdx: 13, labIdxStart: null, labIdxEnd: null },
+		{ label: "2:00 - 2:50",   theoryIdx: 7,    labIdxStart: 7,    labIdxEnd: 7 },
+		{ label: "3:00 - 3:50",   theoryIdx: 8,    labIdxStart: 8,    labIdxEnd: 8 },
+		{ label: "4:00 - 4:50",   theoryIdx: 9,    labIdxStart: 9,    labIdxEnd: 9 },
+		{ label: "5:00 - 5:50",   theoryIdx: 10,   labIdxStart: 10,   labIdxEnd: 10 },
+		{ label: "6:00 - 6:50",   theoryIdx: 11,   labIdxStart: 11,   labIdxEnd: 11 },
+		{ label: "7:00 - 7:50",   theoryIdx: 13,   labIdxStart: 12,   labIdxEnd: 12 },
 	];
 
 	// ── 4. Render the beautiful timetable ───────────────────────────────
@@ -169,6 +169,18 @@
 			const satLab = (schedule["SAT"].lab || []).some(c => c !== null);
 			if (satTheory || satLab) activeDays.push("SAT");
 		}
+
+		// Detect schedule type: morning (slots 0-5), evening (slots 7-13), or mixed
+		let hasMorning = false, hasEvening = false;
+		for (const day of activeDays) {
+			const ds = schedule[day];
+			if (!ds) continue;
+			if ((ds.theory || []).slice(0, 6).some(c => c !== null)) hasMorning = true;
+			if ((ds.theory || []).slice(7).some(c => c !== null)) hasEvening = true;
+			if ((ds.lab || []).slice(0, 7).some(c => c !== null)) hasMorning = true;
+			if ((ds.lab || []).slice(7).some(c => c !== null)) hasEvening = true;
+		}
+		const scheduleType = hasMorning && hasEvening ? "Full Day" : hasMorning ? "Morning Batch" : hasEvening ? "Evening Batch" : "";
 
 		const dayLabels = {
 			MON: "Monday", TUE: "Tuesday", WED: "Wednesday",
@@ -304,6 +316,7 @@
         margin-top: 10px;
         font-size: 11px;
         color: #64748b;
+        flex-wrap: wrap;
       }
       #vit-ext-timetable .legend-item {
         display: flex;
@@ -315,6 +328,11 @@
         height: 10px;
         border-radius: 2px;
       }
+      @media (max-width: 700px) {
+        #vit-ext-timetable { overflow-x: auto; }
+        #vit-ext-timetable table { min-width: 480px; }
+        #vit-ext-timetable th:first-child { width: 70px; }
+      }
     `;
 		container.appendChild(style);
 
@@ -323,7 +341,7 @@
 		title.className = "tt-title";
 		title.textContent = "📅 Weekly Schedule";
 		const subtitle = document.createElement("span");
-		subtitle.textContent = "(Enhanced View)";
+		subtitle.textContent = scheduleType ? `(${scheduleType} · Enhanced View)` : "(Enhanced View)";
 		title.appendChild(subtitle);
 		container.appendChild(title);
 
