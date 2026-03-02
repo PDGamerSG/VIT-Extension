@@ -209,24 +209,49 @@ const buildNavbar = (items_list) => {
 			const spanText = toggleBtn.querySelector("span");
 			if (spanText) spanText.innerText = "More Pins";
 		}
-		// Wire up each pinned link to navigate via the same sidebar-click mechanism
+		// Wire up each pinned link. VTOP's jQuery handlers were bound to the
+		// #quickLinks parent — after moving, they don't fire. We replicate the
+		// navigation by finding the sidebar <a> with a matching data-url.
 		originalDropdown.querySelectorAll("a[data-url]").forEach((item) => {
 			item.removeAttribute("onclick");
 			item.addEventListener("click", (e) => {
 				e.preventDefault();
-				e.stopPropagation();
-				const url = item.dataset.url;
-				if (!url) return;
-				// Find and trigger the matching sidebar <a> (outside our navbar)
-				const sidebarLink = Array.from(document.getElementsByTagName("a")).find(
-					(a) => a.dataset.url === url && !a.closest("#vtop-navbar")
+				const qlUrl = item.dataset.url;
+				if (!qlUrl) return;
+
+				// All sidebar <a data-url> elements (outside our navbar)
+				const allSidebar = Array.from(document.getElementsByTagName("a")).filter(
+					(a) => a.dataset.url && !a.closest("#vtop-navbar") && !a.closest("#quickLinks")
 				);
-				if (sidebarLink) {
-					sidebarLink.removeAttribute("onclick");
-					sidebarLink.dispatchEvent(new MouseEvent("click", {
+
+				// 1. Exact URL match
+				let target = allSidebar.find((a) => a.dataset.url === qlUrl);
+
+				// 2. Last path segment contained in sidebar URL (handles processView prefixes)
+				//    e.g. "academics/common/StudentAttendance" → "StudentAttendance"
+				//         matches "processViewStudentAttendance"
+				if (!target) {
+					const seg = qlUrl.split("/").pop().toLowerCase();
+					target = allSidebar.find((a) => a.dataset.url.toLowerCase().includes(seg));
+				}
+
+				// 3. Text content match
+				if (!target) {
+					const qlText = (item.querySelector("span")?.textContent || item.textContent).trim().toLowerCase();
+					if (qlText) target = allSidebar.find(
+						(a) => a.textContent.trim().toLowerCase().includes(qlText)
+					);
+				}
+
+				if (target) {
+					e.stopPropagation();
+					target.removeAttribute("onclick");
+					target.dispatchEvent(new MouseEvent("click", {
 						view: window, bubbles: true, cancelable: true, buttons: 1
 					}));
 				}
+				// If no sidebar link found, don't stopPropagation — let VTOP's
+				// own document-level handlers try (fallback)
 			});
 		});
 		span.appendChild(originalDropdown);
