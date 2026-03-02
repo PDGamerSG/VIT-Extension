@@ -66,7 +66,27 @@ chrome.downloads.onDeterminingFilename.addListener((item, suggest) => {
     }
 
     if (view == "Course") {
-      const fileExt = "." + item.filename.split(".").pop();
+      // Derive extension: only trust the filename's extension if it looks like a real one (≤6 chars).
+      // Otherwise fall back to MIME type (item.mime is always available in onDeterminingFilename).
+      const lastDot = item.filename.lastIndexOf(".");
+      const rawExt = lastDot > 0 ? item.filename.substring(lastDot) : "";
+      let fileExt;
+      if (rawExt.length >= 2 && rawExt.length <= 7) {
+        fileExt = rawExt; // e.g. ".pdf", ".pptx", ".docx"
+      } else {
+        const mime = (item.mime || "").toLowerCase();
+        if (mime.includes("pdf"))                                          fileExt = ".pdf";
+        else if (mime.includes("presentationml") || mime.includes("powerpoint")) fileExt = ".pptx";
+        else if (mime.includes("wordprocessingml") || mime.includes("msword"))   fileExt = ".docx";
+        else if (mime.includes("spreadsheetml") || mime.includes("ms-excel"))    fileExt = ".xlsx";
+        else if (mime.includes("zip"))                                     fileExt = ".zip";
+        else                                                               fileExt = "";
+      }
+      // Strip extension from base name before running the date-pattern regex
+      const nameNoExt = rawExt.length >= 2 && rawExt.length <= 7
+        ? item.filename.slice(0, lastDot)
+        : item.filename;
+
       const ld = data && data.link_data && data.link_data[0];
       if (ld) {
         let filename = "VIT Downloads/";
@@ -77,13 +97,11 @@ chrome.downloads.onDeterminingFilename.addListener((item, suggest) => {
         }
         suggest({ filename: filename });
       } else {
-        // VTOP server filename format: SEMESTER_COURSEID_TYPE_YYYY-MM-DD_MaterialName.ext
-        // Extract just the MaterialName part after the date
-        const nameNoExt = item.filename.replace(/\.[^.]+$/, "");
+        // VTOP server filename format: SEMESTER_COURSEID_TYPE_YYYY-MM-DD_MaterialName
         const dateMatch = nameNoExt.match(/_\d{4}-\d{2}-\d{2}_(.+)$/);
         const derivedName = dateMatch ? dateMatch[1] : (pendingDownloadName || null);
         if (derivedName) {
-          suggest({ filename: "VIT Downloads/" + derivedName.replace(/[/:*?"<>|]/g, "_") + fileExt });
+          suggest({ filename: "VIT Downloads/" + derivedName.replace(/[/:*?"<>|\\]/g, "_") + fileExt });
         } else {
           suggest({ filename: "VIT Downloads/Other Downloads/" + item.filename });
         }
