@@ -324,7 +324,7 @@ const buildNavbar = (items_list) => {
 			if (!url) return; // Ignore buttons without URLs (e.g. Dark Mode/Logout handled separately)
 
 			const target = Array.from(document.getElementsByTagName("a")).find(
-				(a) => a.dataset.url === url
+				(a) => a.dataset.url === url && !a.closest("#vtop-navbar")
 			);
 
 			if (target) {
