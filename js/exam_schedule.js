@@ -116,19 +116,6 @@
 				font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
 				margin: 16px 0 24px;
 			}
-			#${MARKER_ID} .es-header {
-				display: flex;
-				align-items: center;
-				gap: 10px;
-				margin-bottom: 16px;
-				flex-wrap: wrap;
-			}
-			#${MARKER_ID} .es-title {
-				font-size: 18px;
-				font-weight: 700;
-				color: #0f172a;
-				margin: 0;
-			}
 			/* Filter tabs */
 			#${MARKER_ID} .es-tabs {
 				display: flex;
@@ -182,10 +169,13 @@
 			}
 			/* Table wrapper */
 			#${MARKER_ID} .es-table-wrap {
-				overflow-x: auto;
-				-webkit-overflow-scrolling: touch;
 				border-radius: 8px;
 				border: 1px solid #e2e8f0;
+				overflow: hidden;
+			}
+			#${MARKER_ID} .es-scroll-inner {
+				overflow-x: auto;
+				-webkit-overflow-scrolling: touch;
 			}
 			#${MARKER_ID} .es-table {
 				width: 100%;
@@ -281,12 +271,6 @@
 			}
 		`;
 		wrapper.appendChild(style);
-
-		// Header
-		const header = document.createElement("div");
-		header.className = "es-header";
-		header.innerHTML = `<h2 class="es-title">Exam Schedule</h2>`;
-		wrapper.appendChild(header);
 
 		// Build tabs: All | FAT | CAT2 | CAT1
 		const TAB_ORDER = ["All", "FAT", "CAT2", "CAT1"];
@@ -395,7 +379,10 @@
 			}
 
 			table.appendChild(tbody);
-			wrap.appendChild(table);
+			const scrollInner = document.createElement("div");
+			scrollInner.className = "es-scroll-inner";
+			scrollInner.appendChild(table);
+			wrap.appendChild(scrollInner);
 			tableContainer.appendChild(wrap);
 		};
 
