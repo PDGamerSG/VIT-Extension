@@ -1,7 +1,5 @@
 let reg_no;
 let moduleWise = true;
-let allCourseOptionsCache = []; // All original options, cached when semester filter is built
-let pinnedTeachers = [];        // Pinned teacher names from chrome.storage.sync
 
 
 //sends the message to service worker
@@ -40,8 +38,8 @@ const get_link_details = (link_element, index) => {
 
     if (!module) topic = topic || "Unnamed";
 
-    // Use the original material name saved before we overwrote title with index
-    const materialName = link_element.dataset.vitOriginalTitle || topic || "Unnamed";
+    // Use topic from the table row as primary source (more reliable than title attribute)
+    const materialName = topic || link_element.dataset.vitOriginalTitle || "Unnamed";
     let title = materialName.replace(/[/:*?"<>|]/g, "_").trim() || "Unnamed";
 
     let folder_title = module + "-" + module_title;
@@ -105,6 +103,27 @@ const download_files = (type) => {
 
 const modify_page = () => {
   const { course, faculty_slot } = course_details();
+
+  /* HIDE/SHOW DETAIL FIELDSET */
+  const detailFieldset = Array.from(document.querySelectorAll("fieldset")).find(
+    fs => fs.querySelector("legend")?.textContent?.trim() === "Detail"
+  );
+  if (detailFieldset && !detailFieldset.dataset.vitToggled) {
+    detailFieldset.dataset.vitToggled = "1";
+    const legend = detailFieldset.querySelector("legend");
+    const toggleBtn = document.createElement("button");
+    toggleBtn.type = "button";
+    toggleBtn.textContent = "Hide";
+    toggleBtn.style.cssText = "margin-left:10px;padding:1px 10px;font-size:11px;cursor:pointer;border:1px solid #ccc;border-radius:4px;background:transparent;vertical-align:middle;";
+    let hidden = false;
+    const detailBody = detailFieldset.querySelector(".container-fluid") || detailFieldset.querySelector("#courseAccordion");
+    toggleBtn.addEventListener("click", () => {
+      hidden = !hidden;
+      if (detailBody) detailBody.style.display = hidden ? "none" : "";
+      toggleBtn.textContent = hidden ? "Show" : "Hide";
+    });
+    if (legend) legend.appendChild(toggleBtn);
+  }
 
   /* ADD MODULE-WISE TOGGLE SWITCH */
   let targetElement = document.querySelector("#CoursePageLectureDetail > div:nth-child(11) > div.form-group.col-sm-12.row.mb-3");
@@ -196,12 +215,6 @@ const addSemesterFilter = () => {
   const courseOptions = allOptions.filter(o => o.value !== "");
 
   if (courseOptions.length === 0) return;
-
-  // Cache for teacher filter (module-level + data attribute)
-  allCourseOptionsCache = courseOptions;
-  courseSelect.dataset.vitAllOptions = JSON.stringify(
-    courseOptions.map(o => ({ value: o.value, text: o.textContent.trim() }))
-  );
 
   // Detect semesters
   const fallOptions = courseOptions.filter(o => o.textContent.includes("Fall Semester"));
@@ -393,195 +406,6 @@ chrome.runtime.onMessage.addListener((request) => {
   }
 });
 
-// ── Teacher Pin Filter ──
-const TEACHER_FILTER_ID = "vit-ext-teacher-filter";
-
-const extractTeacherName = (optionText) => {
-  // Format: "COURSE - Title - Teacher Name - Slot (Semester)"
-  const parts = optionText.split(" - ");
-  if (parts.length >= 3) {
-    return parts[2].split("(")[0].trim();
-  }
-  return null;
-};
-
-const filterCoursesByTeacher = (teacher) => {
-  const courseSelect = document.getElementById("courseId");
-  if (!courseSelect) return;
-
-  let cachedOpts;
-  try { cachedOpts = JSON.parse(courseSelect.dataset.vitAllOptions || "[]"); }
-  catch { cachedOpts = []; }
-
-  if (cachedOpts.length === 0) return;
-
-  // Remove all non-default options
-  while (courseSelect.options.length > 1) courseSelect.remove(1);
-
-  const filtered = teacher
-    ? cachedOpts.filter(o => o.text.includes(teacher))
-    : cachedOpts;
-
-  filtered.forEach(o => {
-    const opt = document.createElement("option");
-    opt.value = o.value;
-    opt.textContent = o.text;
-    courseSelect.appendChild(opt);
-  });
-
-  // Auto-select if only one result
-  if (filtered.length === 1) courseSelect.selectedIndex = 1;
-  else courseSelect.selectedIndex = 0;
-};
-
-const addTeacherFilter = () => {
-  if (document.getElementById(TEACHER_FILTER_ID)) return;
-
-  const semFilter = document.getElementById("vit-ext-semester-filter");
-  if (!semFilter) return;
-
-  const courseSelect = document.getElementById("courseId");
-  if (!courseSelect) return;
-
-  let cachedOpts;
-  try { cachedOpts = JSON.parse(courseSelect.dataset.vitAllOptions || "[]"); }
-  catch { cachedOpts = []; }
-  if (cachedOpts.length === 0) return;
-
-  // Build teacher → count map
-  const teacherMap = new Map();
-  for (const o of cachedOpts) {
-    const t = extractTeacherName(o.text);
-    if (t && t.length > 2 && t.toLowerCase() !== "staff") {
-      teacherMap.set(t, (teacherMap.get(t) || 0) + 1);
-    }
-  }
-  if (teacherMap.size === 0) return;
-
-  chrome.storage.sync.get(["vtopPinnedTeachers"], (result) => {
-    pinnedTeachers = result.vtopPinnedTeachers || [];
-    buildTeacherFilterUI(teacherMap, semFilter);
-  });
-};
-
-const buildTeacherFilterUI = (teacherMap, insertAfterEl) => {
-  if (document.getElementById(TEACHER_FILTER_ID)) return;
-
-  const wrapper = document.createElement("div");
-  wrapper.id = TEACHER_FILTER_ID;
-  Object.assign(wrapper.style, {
-    display: "flex",
-    alignItems: "center",
-    gap: "6px",
-    padding: "6px 12px",
-    marginBottom: "8px",
-    flexWrap: "wrap",
-  });
-
-  const label = document.createElement("span");
-  label.textContent = "📌";
-  label.title = "Pinned Teachers";
-  label.style.cssText = "font-size: 14px; flex-shrink: 0;";
-  wrapper.appendChild(label);
-
-  // Chips container
-  const chipsContainer = document.createElement("div");
-  chipsContainer.style.cssText = "display: flex; gap: 4px; flex-wrap: wrap; flex: 1; min-width: 0; align-items: center;";
-
-  let activeTeacher = null;
-
-  const setChipActive = (chip, active) => {
-    if (active) {
-      chip.style.background = "#3b82f6";
-      chip.style.color = "#fff";
-      chip.style.borderColor = "#2563eb";
-    } else {
-      chip.style.background = "#eff6ff";
-      chip.style.color = "#1d4ed8";
-      chip.style.borderColor = "#93c5fd";
-    }
-  };
-
-  const renderChips = () => {
-    chipsContainer.innerHTML = "";
-    for (const teacher of pinnedTeachers) {
-      const chip = document.createElement("button");
-      chip.type = "button";
-      chip.dataset.teacher = teacher;
-      chip.style.cssText = "display:inline-flex;align-items:center;gap:4px;padding:3px 10px 3px 10px;border-radius:16px;border:1px solid #93c5fd;background:#eff6ff;color:#1d4ed8;font-size:11px;font-weight:500;cursor:pointer;transition:all 0.15s;white-space:nowrap;";
-
-      const nameSpan = document.createElement("span");
-      nameSpan.textContent = teacher;
-      chip.appendChild(nameSpan);
-
-      const unpinBtn = document.createElement("span");
-      unpinBtn.textContent = "×";
-      unpinBtn.title = "Unpin";
-      unpinBtn.style.cssText = "font-size:13px;line-height:1;opacity:0.65;margin-left:3px;cursor:pointer;";
-      unpinBtn.addEventListener("click", (e) => {
-        e.stopPropagation();
-        pinnedTeachers = pinnedTeachers.filter(t => t !== teacher);
-        chrome.storage.sync.set({ vtopPinnedTeachers: pinnedTeachers });
-        if (activeTeacher === teacher) {
-          activeTeacher = null;
-          filterCoursesByTeacher(null);
-        }
-        renderChips();
-      });
-      chip.appendChild(unpinBtn);
-
-      chip.addEventListener("click", () => {
-        if (activeTeacher === teacher) {
-          // Toggle off
-          activeTeacher = null;
-          filterCoursesByTeacher(null);
-          setChipActive(chip, false);
-        } else {
-          // Deactivate all chips, activate this one
-          chipsContainer.querySelectorAll("button[data-teacher]").forEach(c => setChipActive(c, false));
-          activeTeacher = teacher;
-          filterCoursesByTeacher(teacher);
-          setChipActive(chip, true);
-        }
-      });
-
-      chipsContainer.appendChild(chip);
-    }
-  };
-
-  renderChips();
-  wrapper.appendChild(chipsContainer);
-
-  // "Pin Teacher" dropdown
-  const pinSelect = document.createElement("select");
-  pinSelect.style.cssText = "font-size:11px;padding:3px 6px;border-radius:6px;border:1px solid #e2e8f0;background:transparent;color:#475569;cursor:pointer;max-width:170px;flex-shrink:0;";
-
-  const defaultOpt = document.createElement("option");
-  defaultOpt.value = "";
-  defaultOpt.textContent = "+ Pin Teacher";
-  pinSelect.appendChild(defaultOpt);
-
-  [...teacherMap.keys()].sort().forEach(t => {
-    const opt = document.createElement("option");
-    opt.value = t;
-    opt.textContent = t + (teacherMap.get(t) > 1 ? ` (${teacherMap.get(t)})` : "");
-    pinSelect.appendChild(opt);
-  });
-
-  pinSelect.addEventListener("change", () => {
-    const teacher = pinSelect.value;
-    if (teacher && !pinnedTeachers.includes(teacher)) {
-      pinnedTeachers = [...pinnedTeachers, teacher];
-      chrome.storage.sync.set({ vtopPinnedTeachers: pinnedTeachers });
-      renderChips();
-    }
-    pinSelect.selectedIndex = 0;
-  });
-
-  wrapper.appendChild(pinSelect);
-  insertAfterEl.insertAdjacentElement("afterend", wrapper);
-};
-
 // ── Persistent observer to detect Course Page appearing in the DOM ──
 // This fires whenever the #courseId select element appears (initial Course Page load)
 (() => {
@@ -589,17 +413,9 @@ const buildTeacherFilterUI = (teacherMap, insertAfterEl) => {
   const coursePageObserver = new MutationObserver(() => {
     const courseSelect = document.getElementById("courseId");
     const filterExists = document.getElementById("vit-ext-semester-filter");
-    const teacherFilterExists = document.getElementById(TEACHER_FILTER_ID);
     if (courseSelect && !filterExists) {
       if (filterDebounce) clearTimeout(filterDebounce);
-      filterDebounce = setTimeout(() => {
-        addSemesterFilter();
-        // Small extra delay so semester filter finishes caching options first
-        setTimeout(() => addTeacherFilter(), 100);
-      }, 300);
-    } else if (courseSelect && filterExists && !teacherFilterExists) {
-      // Semester filter exists but teacher filter doesn't yet (e.g. after SPA nav)
-      setTimeout(() => addTeacherFilter(), 100);
+      filterDebounce = setTimeout(() => addSemesterFilter(), 300);
     }
   });
   coursePageObserver.observe(document.body, { childList: true, subtree: true });
