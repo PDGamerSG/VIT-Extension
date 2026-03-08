@@ -50,6 +50,7 @@ const applyDarkMode = () => {
 			#vit-ext-timetable th { background: #1c1c1c !important; color: #777 !important; border-color: rgba(255,255,255,0.05) !important; }
 			#vit-ext-timetable td:first-child { background: #1c1c1c !important; color: #777 !important; }
 			#vit-ext-timetable .tt-title { color: #e8e8e8 !important; }
+			.footercolor { background: #111111 !important; color: #e8e8e8 !important; }
 		`;
 	}, 150);
 };
@@ -199,62 +200,87 @@ const buildNavbar = (items_list) => {
 		makeBtn(timeTableUrl ? "Time Table" : "Calendar", timeTableUrl || calendarUrl) +
 		makeBtn("Exam Schedule", examScheduleUrl);
 
-	// Extract the original Quick Links dropdown, rename to 'More Pins', and incorporate it to the navbar
-	const originalDropdown = document.querySelector("#quickLinks .dropdown");
-	if (originalDropdown) {
-		const toggleBtn = originalDropdown.querySelector("button.dropdown-toggle");
-		if (toggleBtn) {
-			toggleBtn.className = "btn btn-primary border-primary shadow-none dropdown-toggle";
-			toggleBtn.style.cssText = "background:rgba(13,110,253,0) !important; border-style:none !important; white-space:nowrap; padding:4px 12px !important; display:flex; align-items:center; color:#e8e8e8 !important; font-size: inherit; font-weight: normal;";
-			const spanText = toggleBtn.querySelector("span");
-			if (spanText) spanText.innerText = "More Pins";
-		}
-		// Wire up each pinned link. VTOP's jQuery handlers were bound to the
-		// #quickLinks parent — after moving, they don't fire. We replicate the
-		// navigation by finding the sidebar <a> with a matching data-url.
-		originalDropdown.querySelectorAll("a[data-url]").forEach((item) => {
-			item.removeAttribute("onclick");
-			item.addEventListener("click", (e) => {
+	// Build a custom "More Pins" dropdown from #quickLinks items.
+	// We do NOT move Bootstrap's dropdown element — overflow-x:auto on the navbar
+	// clips dropdown menus and Popper can't escape it. Instead we create our own
+	// floating menu appended directly to <body> using position:fixed.
+	const quickLinksContainer = document.getElementById("quickLinks");
+	const pinItems = quickLinksContainer
+		? Array.from(quickLinksContainer.querySelectorAll("a[data-url]"))
+		: [];
+
+	if (pinItems.length > 0) {
+		// Button
+		const morePinsBtn = document.createElement("button");
+		morePinsBtn.type = "button";
+		morePinsBtn.id = "vtop-more-pins-btn";
+		morePinsBtn.style.cssText = "background:rgba(13,110,253,0);border-style:none;white-space:nowrap;height:32px;display:flex;align-items:center;gap:4px;color:#e8e8e8;cursor:pointer;padding:0 8px;font-size:inherit;";
+		morePinsBtn.innerHTML = 'More Pins <svg width="10" height="10" viewBox="0 0 10 6" fill="none" style="margin-top:1px;"><path d="M1 1l4 4 4-4" stroke="#e8e8e8" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+
+		// Floating menu (appended to body so it escapes any overflow container)
+		const morePinsMenu = document.createElement("div");
+		morePinsMenu.id = "vtop-more-pins-menu";
+		morePinsMenu.style.cssText = "position:fixed;background:#fff;border:1px solid #dee2e6;border-radius:6px;box-shadow:0 4px 16px rgba(0,0,0,0.15);z-index:999999;min-width:200px;display:none;overflow:hidden;";
+
+		// Navigate helper (shared by all items)
+		const navigateToPin = (qlUrl, labelText) => {
+			const allSidebar = Array.from(document.getElementsByTagName("a")).filter(
+				(a) => a.dataset.url && !a.closest("#vtop-navbar") && !a.closest("#quickLinks")
+			);
+			let target = allSidebar.find((a) => a.dataset.url === qlUrl);
+			if (!target) {
+				const seg = qlUrl.split("/").pop().toLowerCase();
+				target = allSidebar.find((a) => a.dataset.url.toLowerCase().includes(seg));
+			}
+			if (!target && labelText) {
+				const lbl = labelText.trim().toLowerCase();
+				target = allSidebar.find((a) => a.textContent.trim().toLowerCase().includes(lbl));
+			}
+			if (target) {
+				target.removeAttribute("onclick");
+				if (target.href && target.href.startsWith("javascript:")) target.removeAttribute("href");
+				target.dispatchEvent(new MouseEvent("click", { view: window, bubbles: true, cancelable: true, buttons: 1 }));
+			}
+		};
+
+		pinItems.forEach((item) => {
+			const label = (item.querySelector("span")?.textContent || item.textContent).trim();
+			const qlUrl = item.dataset.url;
+
+			const menuItem = document.createElement("div");
+			menuItem.textContent = label;
+			menuItem.style.cssText = "padding:9px 16px;cursor:pointer;font-size:13px;color:#212529;white-space:nowrap;";
+			menuItem.addEventListener("mouseenter", () => { menuItem.style.backgroundColor = "#f1f5f9"; });
+			menuItem.addEventListener("mouseleave", () => { menuItem.style.backgroundColor = ""; });
+			menuItem.addEventListener("click", (e) => {
 				e.preventDefault();
-				const qlUrl = item.dataset.url;
-				if (!qlUrl) return;
-
-				// All sidebar <a data-url> elements (outside our navbar)
-				const allSidebar = Array.from(document.getElementsByTagName("a")).filter(
-					(a) => a.dataset.url && !a.closest("#vtop-navbar") && !a.closest("#quickLinks")
-				);
-
-				// 1. Exact URL match
-				let target = allSidebar.find((a) => a.dataset.url === qlUrl);
-
-				// 2. Last path segment contained in sidebar URL (handles processView prefixes)
-				//    e.g. "academics/common/StudentAttendance" → "StudentAttendance"
-				//         matches "processViewStudentAttendance"
-				if (!target) {
-					const seg = qlUrl.split("/").pop().toLowerCase();
-					target = allSidebar.find((a) => a.dataset.url.toLowerCase().includes(seg));
-				}
-
-				// 3. Text content match
-				if (!target) {
-					const qlText = (item.querySelector("span")?.textContent || item.textContent).trim().toLowerCase();
-					if (qlText) target = allSidebar.find(
-						(a) => a.textContent.trim().toLowerCase().includes(qlText)
-					);
-				}
-
-				if (target) {
-					e.stopPropagation();
-					target.removeAttribute("onclick");
-					target.dispatchEvent(new MouseEvent("click", {
-						view: window, bubbles: true, cancelable: true, buttons: 1
-					}));
-				}
-				// If no sidebar link found, don't stopPropagation — let VTOP's
-				// own document-level handlers try (fallback)
+				e.stopPropagation();
+				morePinsMenu.style.display = "none";
+				if (qlUrl) navigateToPin(qlUrl, label);
 			});
+			morePinsMenu.appendChild(menuItem);
 		});
-		span.appendChild(originalDropdown);
+
+		document.body.appendChild(morePinsMenu);
+
+		// Toggle open/close
+		morePinsBtn.addEventListener("click", (e) => {
+			e.stopPropagation();
+			const isOpen = morePinsMenu.style.display !== "none";
+			if (isOpen) {
+				morePinsMenu.style.display = "none";
+			} else {
+				const rect = morePinsBtn.getBoundingClientRect();
+				morePinsMenu.style.top = (rect.bottom + 4) + "px";
+				morePinsMenu.style.left = rect.left + "px";
+				morePinsMenu.style.display = "block";
+			}
+		});
+
+		// Close when clicking anywhere else
+		document.addEventListener("click", () => { morePinsMenu.style.display = "none"; });
+
+		span.appendChild(morePinsBtn);
 	}
 
 	const favouriteBtn = document.getElementById("favouriteBtn");
@@ -484,3 +510,38 @@ document.addEventListener("click", (e) => {
 		}
 	}
 });
+
+// ---- Login page: fix background below card + footer ----
+if (document.getElementById("vtopLoginForm")) {
+	const s = document.createElement("style");
+	s.textContent = `
+		html, body { min-height: 100vh !important; }
+		body.WhiteBackground { background: #f0f4f8 !important; }
+		.WhiteBackground:not(body) { background: transparent !important; }
+		.footercolor { color: #D7D2C8 !important; }
+	`;
+	document.head.appendChild(s);
+
+	// Sync footer color to navbar after VTOP CSS fully renders
+	window.addEventListener("load", () => {
+		setTimeout(() => {
+			const candidates = [
+				document.querySelector("#vtopOpenPageHeader .navbar"),
+				document.querySelector("#vtopOpenPageHeader"),
+				document.querySelector("nav.navbar"),
+			];
+			const footer = document.querySelector(".footercolor");
+			if (!footer) return;
+			for (const el of candidates) {
+				if (!el) continue;
+				const bg = getComputedStyle(el).backgroundColor;
+				if (bg && bg !== "rgba(0, 0, 0, 0)" && bg !== "transparent") {
+					footer.style.setProperty("background", bg, "important");
+					return;
+				}
+			}
+			// fallback: VTOP's header is typically this dark navy
+			footer.style.setProperty("background", "#0d1117", "important");
+		}, 300);
+	});
+}

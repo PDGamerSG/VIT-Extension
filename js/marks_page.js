@@ -44,31 +44,31 @@ let modify_marks_page = () => {
         //Add the row to display totals
         if (!other) {
             tables[j].innerHTML += `
-        <tr class="tableContent-level1" style='background: rgb(60,141,188,0.8);'>
-            <td></td>
-            <td><b>Total:</b></td>
-            <td>${tot_max_marks.toFixed(2)}</td>
-            <td>${tot_weightage_percent.toFixed(2)}</td>
-            <td></td>
-            <td><b>${tot_scored.toFixed(2)}</b></td>
-            <td><b>${tot_weightage_equi.toFixed(2)}</b></td>
-            <td><b>Lost Weightage Marks: ${(tot_weightage_percent.toFixed(2) - tot_weightage_equi.toFixed(2)).toFixed(2)}</b></td>
+        <tr class="tableHeader-level1">
+            <td style="text-align:left;"></td>
+            <td style="text-align:left;"><b>Total:</b></td>
+            <td style="text-align:left;">${tot_max_marks.toFixed(2)}</td>
+            <td style="text-align:left;">${tot_weightage_percent.toFixed(2)}</td>
+            <td style="text-align:left;"></td>
+            <td style="text-align:left;"><b>${tot_scored.toFixed(2)}</b></td>
+            <td style="text-align:left;"><b>${tot_weightage_equi.toFixed(2)}</b></td>
+            <td style="text-align:left;"><b>Lost Weightage Marks: ${(tot_weightage_percent.toFixed(2) - tot_weightage_equi.toFixed(2)).toFixed(2)}</b></td>
         </tr>
         `;
         } else {
             tables[j].innerHTML += `
-        <tr class="tableContent-level1" style='background: rgb(60,141,188,0.8);'>
-            <td></td>
-            <td><b>Total:</b></td>
-            <td>${tot_max_marks.toFixed(2)}</td>
-            <td>${tot_weightage_percent.toFixed(2)}</td>
-            <td></td>
-            <td><b>${tot_scored.toFixed(2)}</b></td>
-            <td><b>${tot_weightage_equi.toFixed(2)}</b></td>
-            <td>${tot_class_avg.toFixed(2)}</td>
-            <td> </td>
-            <td><b>Lost Weightage Marks:</b></td>
-            <td>${(tot_weightage_percent.toFixed(2) - tot_weightage_equi.toFixed(2)).toFixed(2)}</td>
+        <tr class="tableHeader-level1">
+            <td style="text-align:left;"></td>
+            <td style="text-align:left;"><b>Total:</b></td>
+            <td style="text-align:left;">${tot_max_marks.toFixed(2)}</td>
+            <td style="text-align:left;">${tot_weightage_percent.toFixed(2)}</td>
+            <td style="text-align:left;"></td>
+            <td style="text-align:left;"><b>${tot_scored.toFixed(2)}</b></td>
+            <td style="text-align:left;"><b>${tot_weightage_equi.toFixed(2)}</b></td>
+            <td style="text-align:left;">${tot_class_avg.toFixed(2)}</td>
+            <td style="text-align:left;"> </td>
+            <td style="text-align:left;"><b>Lost Weightage Marks:</b></td>
+            <td style="text-align:left;">${(tot_weightage_percent.toFixed(2) - tot_weightage_equi.toFixed(2)).toFixed(2)}</td>
         </tr>
         `;
         }

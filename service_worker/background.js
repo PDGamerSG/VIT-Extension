@@ -43,6 +43,7 @@ const trigger_download = (request) => {
     chrome.downloads.download({
       url: link.url,
       conflictAction: "uniquify",
+      saveAs: true,
     });
   });
 };

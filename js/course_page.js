@@ -99,8 +99,6 @@ const download_files = (type) => {
   });
 };
 
-
-
 const modify_page = () => {
   // course_details() may throw if the detail table hasn't loaded yet;
   // defer it — it's only needed in ref_material click handlers below.
@@ -108,27 +106,6 @@ const modify_page = () => {
   const getCourseInfo = () => {
     try { return course_details(); } catch (e) { return { course: "", faculty_slot: "" }; }
   };
-
-  /* HIDE/SHOW DETAIL FIELDSET */
-  const detailFieldset = Array.from(document.querySelectorAll("fieldset")).find(
-    fs => fs.querySelector("legend")?.textContent?.trim() === "Detail"
-  );
-  if (detailFieldset && !detailFieldset.dataset.vitToggled) {
-    detailFieldset.dataset.vitToggled = "1";
-    const legend = detailFieldset.querySelector("legend");
-    const toggleBtn = document.createElement("button");
-    toggleBtn.type = "button";
-    toggleBtn.textContent = "Hide";
-    toggleBtn.style.cssText = "margin-left:10px;padding:1px 10px;font-size:11px;cursor:pointer;border:1px solid #ccc;border-radius:4px;background:transparent;vertical-align:middle;";
-    let hidden = false;
-    const detailBody = detailFieldset.querySelector(".container-fluid") || detailFieldset.querySelector("#courseAccordion");
-    toggleBtn.addEventListener("click", () => {
-      hidden = !hidden;
-      if (detailBody) detailBody.style.display = hidden ? "none" : "";
-      toggleBtn.textContent = hidden ? "Show" : "Hide";
-    });
-    if (legend) legend.appendChild(toggleBtn);
-  }
 
   /* ADD MODULE-WISE TOGGLE SWITCH */
   let targetElement = document.querySelector("#CoursePageLectureDetail > div:nth-child(11) > div.form-group.col-sm-12.row.mb-3");
@@ -346,6 +323,56 @@ const addSemesterFilter = () => {
   badge.textContent = courseOptions.length + " courses";
   filterBar.appendChild(badge);
 
+  // Hide Detail toggle button — placed to the right of the badge
+  const hideDetailBtn = document.createElement("button");
+  hideDetailBtn.type = "button";
+  hideDetailBtn.id = "vit-ext-hide-detail-btn";
+  hideDetailBtn.textContent = "Hide Detail ▲";
+  Object.assign(hideDetailBtn.style, {
+    padding: "5px 14px",
+    borderRadius: "20px",
+    fontSize: "12px",
+    fontWeight: "500",
+    cursor: "pointer",
+    outline: "none",
+    border: "1px solid #e2e8f0",
+    backgroundColor: "transparent",
+    color: "#475569",
+    transition: "all 200ms ease",
+    lineHeight: "1.4",
+    letterSpacing: "0.01em",
+    marginLeft: "6px",
+  });
+  hideDetailBtn.addEventListener("mouseenter", () => {
+    hideDetailBtn.style.backgroundColor = "#f1f5f9";
+    hideDetailBtn.style.borderColor = "#cbd5e1";
+  });
+  hideDetailBtn.addEventListener("mouseleave", () => {
+    hideDetailBtn.style.backgroundColor = "transparent";
+    hideDetailBtn.style.borderColor = "#e2e8f0";
+  });
+
+  // Restore persisted state on creation
+  chrome.storage.sync.get(["vitDetailHidden"], (result) => {
+    if (result.vitDetailHidden) {
+      hideDetailBtn.textContent = "Show Detail ▼";
+      // Apply to fieldset if it's already in the DOM
+      const fs = document.getElementById("courseAccordion")?.closest("fieldset");
+      if (fs) fs.style.display = "none";
+    }
+  });
+
+  hideDetailBtn.addEventListener("click", () => {
+    const detailFieldset = document.getElementById("courseAccordion")?.closest("fieldset");
+    if (!detailFieldset) return;
+    const nowHidden = detailFieldset.style.display === "none";
+    // Toggle
+    detailFieldset.style.display = nowHidden ? "" : "none";
+    hideDetailBtn.textContent = nowHidden ? "Hide Detail ▲" : "Show Detail ▼";
+    chrome.storage.sync.set({ vitDetailHidden: !nowHidden });
+  });
+  filterBar.appendChild(hideDetailBtn);
+
   // Filter logic
   const filterCourses = (key) => {
     const selectedValue = courseSelect.value;
@@ -413,15 +440,37 @@ chrome.runtime.onMessage.addListener((request) => {
 });
 
 // ── Persistent observer to detect Course Page appearing in the DOM ──
-// This fires whenever the #courseId select element appears (initial Course Page load)
+// This fires whenever the #courseId select element appears (initial Course Page load).
+// It also re-applies the stored Detail hidden state whenever #courseAccordion is inserted
+// (i.e. after the user selects a course and VTOP loads the Detail fieldset via AJAX).
 (() => {
   let filterDebounce = null;
+  let accordionSeen = false;
   const coursePageObserver = new MutationObserver(() => {
     const courseSelect = document.getElementById("courseId");
     const filterExists = document.getElementById("vit-ext-semester-filter");
     if (courseSelect && !filterExists) {
       if (filterDebounce) clearTimeout(filterDebounce);
       filterDebounce = setTimeout(() => addSemesterFilter(), 300);
+    }
+
+    // Each time #courseAccordion freshly appears, re-apply the persisted hidden state
+    const accordion = document.getElementById("courseAccordion");
+    if (accordion) {
+      if (!accordionSeen) {
+        accordionSeen = true;
+        chrome.storage.sync.get(["vitDetailHidden"], (result) => {
+          if (result.vitDetailHidden) {
+            const detailFieldset = accordion.closest("fieldset");
+            if (detailFieldset) detailFieldset.style.display = "none";
+            const btn = document.getElementById("vit-ext-hide-detail-btn");
+            if (btn) btn.textContent = "Show Detail ▼";
+          }
+        });
+      }
+    } else {
+      // Accordion was removed (course page reset / new course loading) — allow re-trigger
+      accordionSeen = false;
     }
   });
   coursePageObserver.observe(document.body, { childList: true, subtree: true });

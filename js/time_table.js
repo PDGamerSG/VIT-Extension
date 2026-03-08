@@ -122,42 +122,52 @@
 		return schedule;
 	};
 
-	// ── 3. Build the slot-index to time-label mapping ───────────────────
-	// Theory has these time columns (matching VTOP grid order):
-	const theoryTimes = [
-		"8:00 - 8:50", "9:00 - 9:50", "10:00 - 10:50",
-		"11:00 - 11:50", "12:00 - 12:50",
-		"-",       // padding column
-		"LUNCH",
-		"2:00 - 2:50", "3:00 - 3:50", "4:00 - 4:50",
-		"5:00 - 5:50", "6:00 - 6:50", "6:51 - 7:00", "7:01 - 7:50",
-	];
+	// ── 3. Time row definitions ─────────────────────────────────────────
+	// Theory slots are 1-hour each; lab slots come in PAIRS of consecutive
+	// 50-min slots forming one ~100-min session.
+	// Each row has a type:
+	//   "theory" → check daySchedule.theory[idx]
+	//   "lab"    → check daySchedule.lab[idxA] OR daySchedule.lab[idxB] (pair = one session)
+	//   "lunch"  → separator
+	//
+	// Theory column indices → actual times:
+	//   0=08:00-08:50  1=09:00-09:50  2=10:00-10:50  3=11:00-11:50  4=12:00-12:50
+	//   5=(padding)    6=(lunch)
+	//   7=14:00-14:50  8=15:00-15:50  9=16:00-16:50  10=17:00-17:50  11=18:00-18:50
+	//   12=18:51-19:00 (transition)   13=19:01-19:50
+	//
+	// Lab column indices → actual times:
+	//   0=08:00-08:50  1=08:51-09:40  2=09:51-10:40  3=10:41-11:30
+	//   4=11:40-12:30  5=12:31-13:20  6=(lunch)
+	//   7=14:00-14:50  8=14:51-15:40  9=15:51-16:40  10=16:41-17:30
+	//   11=17:40-18:30 12=18:31-19:20 13=(padding)
+	//
+	// Lab pairs (each pair = one lab session):
+	//   AM:  [0,1]=08:00-09:40  [2,3]=09:51-11:30  [4,5]=11:40-13:20
+	//   PM:  [7,8]=14:00-15:40  [9,10]=15:51-17:30  [11,12]=17:40-19:20
 
-	const labTimes = [
-		"8:00 - 8:50", "8:51 - 9:40", "9:51 - 10:40",
-		"10:41 - 11:30", "11:40 - 12:30", "12:31 - 1:20",
-		"LUNCH",
-		"2:00 - 2:50", "2:51 - 3:40", "3:51 - 4:40",
-		"4:41 - 5:30", "5:40 - 6:30", "6:31 - 7:20",
-		"-",
-	];
-
-	// Unified time rows for the compact view. We combine theory + lab into
-	// logical blocks. Each entry: { label, theoryIdx, labIdx }
-	// theoryIdx/labIdx = index into the theory/lab cell arrays for that day
-	const timeRows = [
-		{ label: "8:00 - 8:50",   theoryIdx: 0,    labIdxStart: 0,    labIdxEnd: 0 },
-		{ label: "9:00 - 9:50",   theoryIdx: 1,    labIdxStart: 1,    labIdxEnd: 1 },
-		{ label: "10:00 - 10:50", theoryIdx: 2,    labIdxStart: 2,    labIdxEnd: 2 },
-		{ label: "11:00 - 11:50", theoryIdx: 3,    labIdxStart: 3,    labIdxEnd: 3 },
-		{ label: "12:00 - 12:50", theoryIdx: 4,    labIdxStart: 4,    labIdxEnd: 5 },
-		{ label: "LUNCH", isLunch: true },
-		{ label: "2:00 - 2:50",   theoryIdx: 7,    labIdxStart: 7,    labIdxEnd: 7 },
-		{ label: "3:00 - 3:50",   theoryIdx: 8,    labIdxStart: 8,    labIdxEnd: 8 },
-		{ label: "4:00 - 4:50",   theoryIdx: 9,    labIdxStart: 9,    labIdxEnd: 9 },
-		{ label: "5:00 - 5:50",   theoryIdx: 10,   labIdxStart: 10,   labIdxEnd: 10 },
-		{ label: "6:00 - 6:50",   theoryIdx: 11,   labIdxStart: 11,   labIdxEnd: 11 },
-		{ label: "7:00 - 7:50",   theoryIdx: 13,   labIdxStart: 12,   labIdxEnd: 12 },
+	const ALL_TIME_ROWS = [
+		// ── Morning slots ──
+		{ label: "8:00–8:50",   type: "theory", idx: 0 },
+		{ label: "8:00–9:40",   type: "lab",    idxA: 0, idxB: 1 },
+		{ label: "9:00–9:50",   type: "theory", idx: 1 },
+		{ label: "9:51–11:30",  type: "lab",    idxA: 2, idxB: 3 },
+		{ label: "10:00–10:50", type: "theory", idx: 2 },
+		{ label: "11:00–11:50", type: "theory", idx: 3 },
+		{ label: "11:40–13:20", type: "lab",    idxA: 4, idxB: 5 },
+		{ label: "12:00–12:50", type: "theory", idx: 4 },
+		// ── Lunch ──
+		{ label: "Lunch",       type: "lunch" },
+		// ── Afternoon slots ──
+		{ label: "14:00–14:50", type: "theory", idx: 7 },
+		{ label: "14:00–15:40", type: "lab",    idxA: 7, idxB: 8 },
+		{ label: "15:00–15:50", type: "theory", idx: 8 },
+		{ label: "15:51–17:30", type: "lab",    idxA: 9, idxB: 10 },
+		{ label: "16:00–16:50", type: "theory", idx: 9 },
+		{ label: "17:00–17:50", type: "theory", idx: 10 },
+		{ label: "17:40–19:20", type: "lab",    idxA: 11, idxB: 12 },
+		{ label: "18:00–18:50", type: "theory", idx: 11 },
+		{ label: "19:01–19:50", type: "theory", idx: 13 },
 	];
 
 	// ── 4. Render the beautiful timetable ───────────────────────────────
@@ -170,15 +180,17 @@
 			if (satTheory || satLab) activeDays.push("SAT");
 		}
 
-		// Detect schedule type: morning (slots 0-5), evening (slots 7-13), or mixed
+		// Detect schedule type
 		let hasMorning = false, hasEvening = false;
 		for (const day of activeDays) {
 			const ds = schedule[day];
 			if (!ds) continue;
-			if ((ds.theory || []).slice(0, 6).some(c => c !== null)) hasMorning = true;
-			if ((ds.theory || []).slice(7).some(c => c !== null)) hasEvening = true;
-			if ((ds.lab || []).slice(0, 7).some(c => c !== null)) hasMorning = true;
-			if ((ds.lab || []).slice(7).some(c => c !== null)) hasEvening = true;
+			// Morning: theory indices 0-4 or lab indices 0-5
+			if ((ds.theory || []).slice(0, 5).some(c => c !== null)) hasMorning = true;
+			if ((ds.lab || []).slice(0, 6).some(c => c !== null)) hasMorning = true;
+			// Evening: theory indices 7-13 or lab indices 7-12
+			if ((ds.theory || []).slice(7, 14).some(c => c !== null)) hasEvening = true;
+			if ((ds.lab || []).slice(7, 13).some(c => c !== null)) hasEvening = true;
 		}
 		const scheduleType = hasMorning && hasEvening ? "Full Day" : hasMorning ? "Morning Batch" : hasEvening ? "Evening Batch" : "";
 
@@ -364,24 +376,36 @@
 		thead.appendChild(headerRow);
 		table.appendChild(thead);
 
+		// Filter to only rows that have content in at least one active day
+		// (always keep the lunch row)
+		const getCourseForRow = (row, ds) => {
+			if (!ds) return null;
+			if (row.type === "theory") return ds.theory[row.idx] || null;
+			if (row.type === "lab")    return ds.lab[row.idxA] || ds.lab[row.idxB] || null;
+			return null;
+		};
+
+		const visibleRows = ALL_TIME_ROWS.filter(row => {
+			if (row.type === "lunch") return true;
+			return activeDays.some(day => getCourseForRow(row, schedule[day]) !== null);
+		});
+
 		// Body
 		const tbody = document.createElement("tbody");
 
-		for (const timeRow of timeRows) {
+		for (const timeRow of visibleRows) {
 			const tr = document.createElement("tr");
 
 			// Time label cell
 			const tdTime = document.createElement("td");
 			tdTime.textContent = timeRow.label;
-			if (timeRow.isLunch) tdTime.className = "is-lunch";
+			if (timeRow.type === "lunch") tdTime.className = "is-lunch";
 			tr.appendChild(tdTime);
 
-			if (timeRow.isLunch) {
-				// Span across all day columns
+			if (timeRow.type === "lunch") {
 				for (const day of activeDays) {
 					const td = document.createElement("td");
 					td.className = "is-lunch";
-					td.textContent = "";
 					tr.appendChild(td);
 				}
 				tbody.appendChild(tr);
@@ -390,34 +414,8 @@
 
 			for (const day of activeDays) {
 				const td = document.createElement("td");
-
-				const daySchedule = schedule[day];
-				if (!daySchedule) {
-					td.className = "empty-cell";
-					td.textContent = "—";
-					tr.appendChild(td);
-					continue;
-				}
-
-				// Check theory slot at this index
-				let courseInfo = null;
-				if (timeRow.theoryIdx !== undefined && timeRow.theoryIdx !== null) {
-					const theorySlot = daySchedule.theory[timeRow.theoryIdx];
-					if (theorySlot) courseInfo = theorySlot;
-				}
-
-				// If no theory hit, check lab slots in this range
-				if (!courseInfo && timeRow.labIdxStart !== undefined && timeRow.labIdxStart !== null) {
-					const start = timeRow.labIdxStart;
-					const end = timeRow.labIdxEnd !== undefined && timeRow.labIdxEnd !== null ? timeRow.labIdxEnd : start;
-					for (let li = start; li <= end; li++) {
-						const labSlot = daySchedule.lab[li];
-						if (labSlot) {
-							courseInfo = labSlot;
-							break;
-						}
-					}
-				}
+				const ds = schedule[day];
+				const courseInfo = getCourseForRow(timeRow, ds);
 
 				if (courseInfo) {
 					const isLab = courseInfo.isLab;

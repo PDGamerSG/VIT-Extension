@@ -1,9 +1,4 @@
-/**
- * VIT Extension — Dashboard Enhancements
- * 1. Removes "Last Five Feedback Details" section
- * 2. Adds toggle button to hide/show CGPA section
- * 3. Replaces feedback section with "Class Messages"
- */
+
 
 (() => {
     const MARKER_ID = "vit-ext-dashboard-done";
