@@ -1,29 +1,28 @@
-let login = document.getElementById("login");
-let logout = document.getElementById("logout");
+const login = document.getElementById("login");
+const logout = document.getElementById("logout");
 
-logout.style.display = "none";
-login.addEventListener("click", () => {
-    chrome.runtime.sendMessage({
-        message: "login",
-    });
-    window.close();
-});
+if (logout) logout.style.display = "none";
 
-logout.addEventListener("click", () => {
-    chrome.runtime.sendMessage({
-        message: "logout",
+if (login) {
+    login.addEventListener("click", () => {
+        chrome.runtime.sendMessage({ message: "login" });
+        window.close();
     });
-    window.close();
-});
+}
+
+if (logout) {
+    logout.addEventListener("click", () => {
+        chrome.runtime.sendMessage({ message: "logout" });
+        window.close();
+    });
+}
 
 chrome.storage.sync.get(["token"], (token) => {
     if (token.token != null) {
-        login.style.display = "none";
-        logout.style.display = "";
-
-    }
-    else {
-        login.style.display = "";
-        logout.style.display = "none";
+        if (login) login.style.display = "none";
+        if (logout) logout.style.display = "";
+    } else {
+        if (login) login.style.display = "";
+        if (logout) logout.style.display = "none";
     }
 });

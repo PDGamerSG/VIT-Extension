@@ -105,7 +105,7 @@ let view_attendance_page = () => {
 				if (course_type.includes("Lab")) {
 					bunk_classes /= 2;
 					bunk_classes = Math.floor(bunk_classes);
-					if (bunk_classes == -1) {
+					if (bunk_classes < 0) {
 						bunk_classes = 0;
 					}
 					new_Table_Content.splice(
@@ -115,7 +115,7 @@ let view_attendance_page = () => {
 					);
 					row.innerHTML = new_Table_Content.join("");
 				} else {
-					if (bunk_classes == -1) {
+					if (bunk_classes < 0) {
 						bunk_classes = 0;
 					}
 					new_Table_Content.splice(

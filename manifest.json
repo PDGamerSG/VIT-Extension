@@ -4,7 +4,7 @@
 	"name": "VTop+",
 	"short_name": "VTop+",
 	"description": "An open source browser extension giving superpowers to VTOP.",
-	"version": "1.0",
+	"version": "1.1",
 	"author": "Pallab Das",
 	"icons": {
 		"16": "assets/img/logo_transparent_enlarge.png",

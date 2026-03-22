@@ -14,7 +14,7 @@ let modify_marks_page = () => {
             tot_weightage_equi = 0,
             tot_class_avg = 0;
 
-        table_marks = tables[j].querySelectorAll(".tableContent-level1"); // select rows excluding header
+        let table_marks = tables[j].querySelectorAll(".tableContent-level1"); // select rows excluding header
         table_marks = Array.from(table_marks);
 
         for (let k = 0; k < table_marks.length; k++) {
@@ -52,7 +52,7 @@ let modify_marks_page = () => {
             <td style="text-align:left;"></td>
             <td style="text-align:left;"><b>${tot_scored.toFixed(2)}</b></td>
             <td style="text-align:left;"><b>${tot_weightage_equi.toFixed(2)}</b></td>
-            <td style="text-align:left;"><b>Lost Weightage Marks: ${(tot_weightage_percent.toFixed(2) - tot_weightage_equi.toFixed(2)).toFixed(2)}</b></td>
+            <td style="text-align:left;"><b>Lost Weightage Marks: ${(tot_weightage_percent - tot_weightage_equi).toFixed(2)}</b></td>
         </tr>
         `;
         } else {
@@ -68,7 +68,7 @@ let modify_marks_page = () => {
             <td style="text-align:left;">${tot_class_avg.toFixed(2)}</td>
             <td style="text-align:left;"> </td>
             <td style="text-align:left;"><b>Lost Weightage Marks:</b></td>
-            <td style="text-align:left;">${(tot_weightage_percent.toFixed(2) - tot_weightage_equi.toFixed(2)).toFixed(2)}</td>
+            <td style="text-align:left;">${(tot_weightage_percent - tot_weightage_equi).toFixed(2)}</td>
         </tr>
         `;
         }

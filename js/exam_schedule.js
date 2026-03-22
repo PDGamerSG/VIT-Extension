@@ -66,7 +66,7 @@
 		if (parts.length !== 3) return null;
 		const months = { Jan:0,Feb:1,Mar:2,Apr:3,May:4,Jun:5,Jul:6,Aug:7,Sep:8,Oct:9,Nov:10,Dec:11 };
 		const day = parseInt(parts[0]);
-		const month = months[parts[1]];
+		const month = months[parts[1].charAt(0).toUpperCase() + parts[1].slice(1).toLowerCase()];
 		const year = parseInt(parts[2]);
 		if (isNaN(day) || month === undefined || isNaN(year)) return null;
 		return new Date(year, month, day);

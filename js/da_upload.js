@@ -49,7 +49,7 @@ let da_page = async () => {
     });
 
     for (let i = 1; i < table.children.length; i++) {
-      var classid = table.children[i].children[1].innerHTML;
+      const classid = table.children[i].children[1].innerHTML;
       if (table.children[i].children[3].children.length != 1) {
         await fetch(
           `${window.location.origin}/vtop/examinations/processDigitalAssignment`,

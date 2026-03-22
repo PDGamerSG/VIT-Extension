@@ -500,16 +500,6 @@ if (document.querySelectorAll(".vtop-nav-btn").length === 0) {
 	flag = true;
 }
 
-// Global click listener to track sidebar clicks directly from VTOP menu
-document.addEventListener("click", (e) => {
-	const a = e.target.closest("a[data-url]");
-	if (a) {
-		const url = a.dataset.url;
-		if (url && !(e.target.closest("#quickLinks") && a.getAttribute("onclick") && a.getAttribute("onclick").includes("home"))) {
-			// Removed sessionStorage.setItem("vtopLastView", url);
-		}
-	}
-});
 
 // ---- Login page: fix background below card + footer ----
 if (document.getElementById("vtopLoginForm")) {
