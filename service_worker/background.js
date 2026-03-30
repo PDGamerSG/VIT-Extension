@@ -1,3 +1,5 @@
+const IS_FIREFOX = typeof browser !== "undefined" && browser.runtime?.id;
+
 let course = "";
 let faculty_slot = "";
 let module_wise = true;
@@ -21,7 +23,7 @@ chrome.runtime.onMessage.addListener((request) => {
 
 /* Sends a message to the content script */
 const returnMessage = (MessageToReturn) => {
-  chrome.tabs.query({ active: true }, (tabs) => {
+  chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
     for (let tab of tabs) {
       if (tab.url && tab.url.includes("vtop")) {
         chrome.tabs.sendMessage(tab.id, {
@@ -40,16 +42,20 @@ const trigger_download = (request) => {
   module_wise = request.data.module_wise;
   request.data.link_data.forEach((link) => {
     if (!link.url) return;
-    chrome.downloads.download({
+    const options = {
       url: link.url,
       conflictAction: "uniquify",
       saveAs: true,
-    });
+    };
+    if (IS_FIREFOX && link.title) {
+      options.filename = link.title;
+    }
+    chrome.downloads.download(options);
   });
 };
 
-// Change File Name for the file
-chrome.downloads.onDeterminingFilename.addListener((item, suggest) => {
+// Change File Name for the file (Chrome only — Firefox doesn't support onDeterminingFilename)
+if (!IS_FIREFOX) chrome.downloads.onDeterminingFilename.addListener((item, suggest) => {
   if (
     item.url.includes("vtop.vit.ac.in") ||
     item.url.includes("vtopcc.vit.ac.in")
@@ -179,10 +185,14 @@ chrome.webRequest.onCompleted.addListener(
 // Fires the msg from script
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   try {
-    if (request.message && request.message.course) trigger_download(request);
+    if (request.message === "course-page-data" && request.data && request.data.link_data) {
+      trigger_download(request);
+    }
   } catch (e) { }
 });
 
-// Keep service worker alive
-chrome.alarms.create({ periodInMinutes: 0.5 });
-chrome.alarms.onAlarm.addListener(() => { });
+// Keep service worker alive (Chrome only — Firefox has persistent background)
+if (!IS_FIREFOX) {
+  chrome.alarms.create({ periodInMinutes: 0.5 });
+  chrome.alarms.onAlarm.addListener(() => { });
+}

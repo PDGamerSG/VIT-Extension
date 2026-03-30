@@ -463,8 +463,6 @@ const clear_navbar = () => {
 
 // ---- Message listener ----
 
-let flag = false;
-
 chrome.runtime.onMessage.addListener((request) => {
 	if (request.message === "nav_bar_change") {
 		try {
@@ -474,10 +472,7 @@ chrome.runtime.onMessage.addListener((request) => {
 			) {
 				document.getElementsByClassName("btn-group dropend")[0].remove();
 			}
-			if (
-				document.querySelectorAll(".vtop-nav-btn").length === 0 &&
-				flag
-			) {
+			if (document.querySelectorAll(".vtop-nav-btn").length === 0) {
 				nav_bar_change();
 			}
 		} catch (error) { }
@@ -494,10 +489,14 @@ if (
 
 // Initial load — set up navbar
 if (document.querySelectorAll(".vtop-nav-btn").length === 0) {
-	window.addEventListener("load", () => {
+	if (document.readyState === "complete") {
+		// document_idle may fire after window.load on Firefox — run immediately
 		nav_bar_change();
-	}, false);
-	flag = true;
+	} else {
+		window.addEventListener("load", () => {
+			nav_bar_change();
+		}, false);
+	}
 }
 
 

@@ -1,0 +1,72 @@
+{
+	"manifest_version": 3,
+	"name": "VTop+",
+	"short_name": "VTop+",
+	"description": "An open source browser extension giving superpowers to VTOP.",
+	"version": "1.1",
+	"author": "Pallab Das",
+	"browser_specific_settings": {
+		"gecko": {
+			"id": "vtopplus@example.com",
+			"strict_min_version": "109.0",
+			"data_collection_permissions": {
+				"required": ["none"]
+			}
+		}
+	},
+	"icons": {
+		"16": "assets/img/logo_transparent_enlarge.png",
+		"48": "assets/img/logo_transparent_enlarge.png",
+		"128": "assets/img/logo_transparent_enlarge.png"
+	},
+	"permissions": [
+		"webRequest",
+		"downloads",
+		"storage",
+		"tabs"
+	],
+	"host_permissions": [
+		"*://vtop.vit.ac.in/*",
+		"*://vtopcc.vit.ac.in/vtop/*"
+	],
+	"background": {
+		"scripts": ["service_worker/background.js"]
+	},
+	"content_scripts": [
+		{
+			"matches": [
+				"*://vtop.vit.ac.in/*",
+				"*://vtopcc.vit.ac.in/vtop/*"
+			],
+			"js": [
+				"js/darkreader.js",
+				"js/attendance.js",
+				"js/marks_page.js",
+				"js/course_page.js",
+				"js/navbar.js",
+				"js/da_upload.js",
+				"js/da_upload_sub.js",
+				"js/captcha/bitmaps.js",
+				"js/captcha/captchaparser.js",
+				"js/navbarcc.js",
+				"js/time_table.js",
+				"js/dashboard.js",
+				"js/exam_schedule.js"
+			]
+		}
+	],
+	"web_accessible_resources": [
+		{
+			"matches": [
+				"*://*.vit.ac.in/*"
+			],
+			"resources": [
+				"js/captcha/weights.json"
+			]
+		}
+	],
+	"action": {
+		"default_title": "VTop+",
+		"default_popup": "html/popup.html"
+	}
+}
