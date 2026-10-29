@@ -38,6 +38,7 @@
 				"*://vtop.vit.ac.in/*",
 				"*://vtopcc.vit.ac.in/vtop/*"
 			],
+			"css": ["html/content.css"],
 			"js": [
 				"js/darkreader.js",
 				"js/attendance.js",
@@ -52,16 +53,6 @@
 				"js/time_table.js",
 				"js/dashboard.js",
 				"js/exam_schedule.js"
-			]
-		}
-	],
-	"web_accessible_resources": [
-		{
-			"matches": [
-				"*://*.vit.ac.in/*"
-			],
-			"resources": [
-				"js/captcha/weights.json"
 			]
 		}
 	],

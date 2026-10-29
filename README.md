@@ -7,7 +7,7 @@ VTop+ is a powerful, open-source browser extension designed to enhance the VTOP 
 - **Revamped Homepage & UI**: A cleaner, user-friendly dashboard layout with a modern aesthetic. 
 - **Dark Mode**: A highly requested, seamless dark mode integration for late-night study sessions.
 - **Hide CGPA**: Added a privacy toggle feature to hide your CGPA from the dashboard.
-- **Enhanced Course Page Filters**: Added "Fall" and "Winter" semester filter buttons on the course page to easily sort through your enrolled subjects.
+- **Course Page Filters**: Filter by semester and academic year, such as "Fall 2025–26". The newest available semester opens by default unless a course is already selected. Use "All" to see every course.
 - **Class Messages on Dashboard**: Important class announcements are now directly visible on the improved homepage layout.
 - **Better Timetable View**: A solid foundation for viewing your timetable (with major enhancements planned for upcoming releases).
 - **DA (Digital Assignment) Upload Improvements**:
@@ -17,11 +17,25 @@ VTop+ is a powerful, open-source browser extension designed to enhance the VTOP 
 
 ## 🚀 Installation 
 
-*(Provide installation instructions here, e.g., how to load it unpacked in Chrome/Edge or link to the Extension Store once published)*
-1. Download or clone this repository.
-2. Go to `chrome://extensions/` (or `edge://extensions/`).
-3. Enable **Developer mode** in the top right.
-4. Click **Load unpacked** and select the extension folder.
+Clone this repository and build with Node.js. No dependencies are required.
+
+### Firefox
+
+1. Run `node build.js firefox`.
+2. Open `about:debugging#/runtime/this-firefox`.
+3. Click **Load Temporary Add-on** and select `dist/firefox/manifest.json`.
+4. Open VTOP and allow the extension to access the site if Firefox asks.
+
+Temporary add-ons are removed when Firefox restarts. Permanent installation in standard Firefox requires a Mozilla-signed add-on. To submit a build for signing, ZIP the contents of `dist/firefox/` with `manifest.json` at the archive root.
+
+### Chrome / Edge
+
+1. Run `node build.js chrome`.
+2. Open `chrome://extensions/` (or `edge://extensions/`).
+3. Enable **Developer mode**.
+4. Click **Load unpacked** and select `dist/chrome/`.
+
+Run `node build.js` to build both browsers. Browser-specific manifests share the same source files. Firefox uses a background script; Chrome uses a service worker. Dark mode and its saved preference are shared across the campus interfaces within each browser.
 
 ## 👨‍💻 Developer
 

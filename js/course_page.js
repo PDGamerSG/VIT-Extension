@@ -183,7 +183,21 @@ const modify_page = () => {
 };
 
 // ── Semester Filter for Course Dropdown ──
-let lastActiveFilter = "all"; // Persists across re-creations
+let lastActiveFilter = null; // Persists across re-creations
+
+const getCourseSemester = (option) => {
+  const source = option.textContent + " " + option.value;
+  const term = source.match(/\b(fall|win(?:ter)?|sum(?:mer)?|interim|intersession)(?:\s*(?:semester|sem|session))?(?=\b|20\d{2})/i);
+  if (!term) return null;
+  const yearPattern = /(20\d{2})(?:\s*[-/–]\s*(20\d{2}|\d{2})|(\d{2}))?/;
+  const year = source.slice(term.index + term[0].length).match(yearPattern) || source.match(yearPattern);
+  if (!year) return null;
+  const names = { fall: "Fall", win: "Winter", winter: "Winter", sum: "Summer", summer: "Summer", interim: "Interim", intersession: "Intersession" };
+  const name = names[term[1].toLowerCase()];
+  const endYear = year[2] || year[3];
+  const academicYear = year[1] + (endYear ? "–" + endYear.slice(-2) : "");
+  return { key: name.toLowerCase() + "-" + academicYear, label: name + " " + academicYear, year: Number(year[1]), term: name.toLowerCase() };
+};
 
 const addSemesterFilter = () => {
   const FILTER_ID = "vit-ext-semester-filter";
@@ -194,17 +208,21 @@ const addSemesterFilter = () => {
 
   // Store all original options (excluding the default placeholder)
   const allOptions = Array.from(courseSelect.options);
-  const defaultOption = allOptions.find(o => o.value === "");
-  const courseOptions = allOptions.filter(o => o.value !== "");
+  const defaultOption = allOptions.find(o => ["", "0", "-1"].includes(o.value));
+  const courseOptions = allOptions.filter(o => o !== defaultOption);
 
   if (courseOptions.length === 0) return;
 
-  // Detect semesters
-  const fallOptions = courseOptions.filter(o => o.textContent.includes("Fall Semester"));
-  const winterOptions = courseOptions.filter(o => o.textContent.includes("Winter Semester"));
-
-  // Only add filter if there are multiple semesters
-  if (fallOptions.length === 0 && winterOptions.length === 0) return;
+  const semesters = new Map();
+  courseOptions.forEach(option => {
+    const semester = getCourseSemester(option);
+    if (!semester) return; // Unrecognized courses remain available under All.
+    if (!semesters.has(semester.key)) semesters.set(semester.key, { ...semester, options: [] });
+    semesters.get(semester.key).options.push(option);
+  });
+  if (semesters.size === 0) return;
+  const termOrder = { fall: 0, winter: 1, summer: 2, interim: 3, intersession: 3 };
+  const sortedSemesters = [...semesters.values()].sort((a, b) => b.year - a.year || termOrder[b.term] - termOrder[a.term]);
 
   // Find insertion point
   const fieldset = courseSelect.closest("fieldset");
@@ -304,13 +322,13 @@ const addSemesterFilter = () => {
       } else {
         Object.assign(b.btn.style, BTN_INACTIVE);
       }
+      b.btn.setAttribute("aria-pressed", String(b.key === key));
     });
   };
 
   // Create filter buttons
   createBtn("All", "all");
-  if (fallOptions.length > 0) createBtn("Fall · " + fallOptions.length, "fall");
-  if (winterOptions.length > 0) createBtn("Winter · " + winterOptions.length, "winter");
+  sortedSemesters.forEach(semester => createBtn(semester.label + " · " + semester.options.length, semester.key));
 
   // Course count badge
   const badge = document.createElement("span");
@@ -383,9 +401,7 @@ const addSemesterFilter = () => {
 
     if (defaultOption) courseSelect.appendChild(defaultOption.cloneNode(true));
 
-    const filtered = key === "fall" ? fallOptions
-      : key === "winter" ? winterOptions
-        : courseOptions;
+    const filtered = key === "all" ? courseOptions : semesters.get(key).options;
 
     filtered.forEach(opt => courseSelect.appendChild(opt.cloneNode(true)));
 
@@ -396,6 +412,7 @@ const addSemesterFilter = () => {
     }
 
     setActiveBtn(key);
+    badge.textContent = filtered.length + " courses";
   };
 
   // Insert into DOM
@@ -406,10 +423,11 @@ const addSemesterFilter = () => {
   }
 
   // Restore previous filter state
-  setActiveBtn(lastActiveFilter);
-  if (lastActiveFilter !== "all") {
-    filterCourses(lastActiveFilter);
-  }
+  const selectedSemester = courseOptions.find(option => option.value === courseSelect.value);
+  const initialKey = lastActiveFilter === "all" || semesters.has(lastActiveFilter)
+    ? lastActiveFilter
+    : (selectedSemester && getCourseSemester(selectedSemester)?.key) || (selectedSemester ? "all" : sortedSemesters[0].key);
+  filterCourses(initialKey);
 };
 
 // ── Message listener for course page modifications ──

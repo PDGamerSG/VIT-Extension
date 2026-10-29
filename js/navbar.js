@@ -6,60 +6,69 @@
 
 let isDarkModeActive = false;
 
+DarkReader.setFetchMethod(window.fetch.bind(window));
+
 const applyDarkMode = () => {
 	isDarkModeActive = true;
+	// Gruvbox Soft: warm surfaces, cream text, and muted amber accents.
 	DarkReader.enable({
 		brightness: 100,
-		contrast: 90,
-		sepia: 10
-	});
-	// Apply VTOP-specific overrides after DarkReader processes the page
-	setTimeout(() => {
-		let el = document.getElementById("vit-ext-dark-override");
-		if (!el) {
-			el = document.createElement("style");
-			el.id = "vit-ext-dark-override";
-			document.head.appendChild(el);
+		contrast: 100,
+		sepia: 0,
+		darkSchemeBackgroundColor: "#32302f",
+		darkSchemeTextColor: "#ebdbb2"
+	}, { css: `
+		:root { color-scheme: dark; }
+		body, html, #outer-wrap, #inner-wrap, .container, .container-fluid { background: #32302f !important; color: #ebdbb2 !important; }
+		nav.navbar, .navbar, .footercolor { background: #3c3836 !important; border-color: #665c54 !important; box-shadow: none !important; }
+		.VTopHeaderStyle, .navbar-text, .navbar-text *, .vtop-nav-btn, #vtop-navbar-cc button, #vtop-more-pins-btn { color: #ebdbb2 !important; }
+		html body .card, .panel, .panel-body, .tab-content, .tab-pane { background: #3c3836 !important; border-color: #665c54 !important; box-shadow: none !important; }
+		html body .card-header { background: #504945 !important; color: #d5c4a1 !important; border-color: #665c54 !important; }
+		.card-header .fw-bold, .card-header span.fs-6, .card-header h5 { color: #d5c4a1 !important; }
+		.card-body, .table { color: #ebdbb2 !important; }
+		thead th { background: #504945 !important; color: #bdae93 !important; border-color: #665c54 !important; }
+		tbody tr { background: #3c3836 !important; border-color: #665c54 !important; }
+		tbody tr:nth-child(even) { background: #3c3836 !important; }
+		tbody td { color: #d5c4a1 !important; border-color: #665c54 !important; }
+		.form-control, select, .form-select, input[type="text"], input[type="password"], textarea {
+			background: #504945 !important; color: #ebdbb2 !important; border-color: #7c6f64 !important;
 		}
-		el.textContent = `
-			/* 100xdevs-style neutral dark — no blue tint */
-			body, html { background: #0d0d0d !important; color: #e8e8e8 !important; }
-			nav.navbar { background: #111111 !important; border-bottom: 1px solid rgba(255,255,255,0.06) !important; box-shadow: none !important; }
-			.VTopHeaderStyle, .navbar-text, .navbar-text * { color: #e8e8e8 !important; }
-			.card { background: #161616 !important; border-color: rgba(255,255,255,0.08) !important; box-shadow: none !important; }
-			.card-header { background: #1c1c1c !important; border-color: rgba(255,255,255,0.06) !important; }
-			.card-header .fw-bold, .card-header span.fs-6, .card-header h5 { color: #999 !important; }
-			.card-body { color: #d0d0d0 !important; }
-			thead th { background: #1c1c1c !important; color: #777 !important; border-color: rgba(255,255,255,0.05) !important; }
-			tbody tr { border-color: rgba(255,255,255,0.04) !important; }
-			tbody tr:nth-child(even) { background-color: #141414 !important; }
-			tbody tr:nth-child(odd) { background-color: #111111 !important; }
-			tbody td { color: #ccc !important; border-color: rgba(255,255,255,0.04) !important; }
-			.form-control, select, .form-select, input[type="text"], input[type="password"], textarea {
-				background: #1c1c1c !important; color: #e8e8e8 !important; border-color: rgba(255,255,255,0.12) !important; box-shadow: none !important;
-			}
-			.btn-primary { background: transparent !important; border: 1px solid rgba(255,255,255,0.2) !important; color: #e8e8e8 !important; box-shadow: none !important; }
-			.btn-primary:hover { background: rgba(255,255,255,0.06) !important; }
-			.btn { box-shadow: none !important; }
-			.alert { background: #161616 !important; border-color: rgba(255,255,255,0.08) !important; color: #c8c8c8 !important; }
-			a:not(.vtop-nav-btn):not(.btn) { color: #7eb3d0 !important; }
-			.panel, .panel-body, .tab-content, .tab-pane { background: #111111 !important; }
-			#outer-wrap, #inner-wrap, .container, .container-fluid { background: #0d0d0d !important; }
-			.table { color: #ccc !important; border-color: rgba(255,255,255,0.05) !important; }
-			#vit-ext-timetable table { background: #161616 !important; border-color: rgba(255,255,255,0.06) !important; }
-			#vit-ext-timetable th { background: #1c1c1c !important; color: #777 !important; border-color: rgba(255,255,255,0.05) !important; }
-			#vit-ext-timetable td:first-child { background: #1c1c1c !important; color: #777 !important; }
-			#vit-ext-timetable .tt-title { color: #e8e8e8 !important; }
-			.footercolor { background: #111111 !important; color: #e8e8e8 !important; }
-		`;
-	}, 150);
+		::placeholder { color: #bdae93 !important; opacity: 1; }
+		.btn-primary { background: #504945 !important; border-color: #7c6f64 !important; color: #ebdbb2 !important; box-shadow: none !important; }
+		.btn-primary:hover { background: #665c54 !important; }
+		a:not(.vtop-nav-btn):not(.btn) { color: #d79921 !important; }
+		#vtop-more-pins-menu { background: #504945 !important; border-color: #665c54 !important; }
+		#vtop-more-pins-menu > div { color: #ebdbb2 !important; }
+		#vtop-more-pins-menu > div:hover { background: #665c54 !important; }
+		.dropdown-menu { background: #3c3836 !important; border-color: #665c54 !important; }
+		.dropdown-header { color: #bdae93 !important; }
+		a[data-url], .dropdown-menu .dropdown-item, .navbar .nav-link, .navbar .dropdown-toggle { color: #d5c4a1 !important; background: transparent !important; }
+		a[data-url] :is(i, svg), .dropdown-menu .dropdown-item :is(i, svg) { color: inherit !important; }
+		html body :is(a[data-url], .dropdown-menu .dropdown-item, #vtop-more-pins-menu > div):is(:hover, :focus-visible),
+		html body .navbar :is(.nav-link, .dropdown-toggle):is(:hover, :focus-visible, [aria-expanded="true"]) { background: #504945 !important; color: #ebdbb2 !important; }
+		#vit-ext-semester-filter > span { color: #bdae93 !important; }
+		#vit-ext-semester-filter button { background: transparent !important; color: #d5c4a1 !important; border-color: #7c6f64 !important; }
+		#vit-ext-semester-filter button[aria-pressed="true"] { background: #ebdbb2 !important; color: #3c3836 !important; border-color: #ebdbb2 !important; }
+		#vit-ext-semester-filter button:hover { border-color: #bdae93 !important; }
+		button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible {
+			outline: 2px solid #d79921 !important; outline-offset: 3px;
+		}
+		#vit-ext-timetable table { background: #3c3836 !important; border-color: #665c54 !important; box-shadow: none !important; }
+		#vit-ext-timetable th, #vit-ext-timetable td:first-child, #vit-ext-timetable td.is-lunch { background: #504945 !important; color: #bdae93 !important; border-color: #665c54 !important; }
+		#vit-ext-timetable td.has-class { background: #3c3836 !important; }
+		#vit-ext-timetable td.is-lab { background: #504945 !important; }
+		#vit-ext-timetable td.has-class:hover { background: #504945 !important; }
+		#vit-ext-timetable .type-theory { background: #504945 !important; color: #83a598 !important; }
+		#vit-ext-timetable .type-lab { background: #504945 !important; color: #d5c4a1 !important; }
+		#vit-ext-timetable .type-soft { background: #504945 !important; color: #bdae93 !important; }
+		#vit-ext-timetable .tt-title, #vit-ext-timetable .course-name { color: #ebdbb2 !important; }
+		#vit-ext-timetable .course-venue, #vit-ext-timetable .legend { color: #bdae93 !important; }
+	` });
 };
 
 const removeDarkMode = () => {
 	isDarkModeActive = false;
 	DarkReader.disable();
-	const el = document.getElementById("vit-ext-dark-override");
-	if (el) el.remove();
 };
 
 const toggleDarkMode = () => {
@@ -75,20 +84,22 @@ const toggleDarkMode = () => {
 };
 
 const updateDarkToggleIcon = (isDark) => {
-	const btn = document.getElementById("vtop-dark-toggle");
-	if (btn) {
+	document.querySelectorAll("#vtop-dark-toggle, #vtop-dark-toggle-cc").forEach(btn => {
 		btn.title = isDark ? "Switch to Light Mode" : "Switch to Dark Mode";
+		btn.setAttribute("aria-label", btn.title);
+		btn.setAttribute("aria-pressed", String(isDark));
 
 		btn.innerHTML = isDark
 			? '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#e8e8e8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="position:relative; top:2px;"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line></svg>'
 			: '<svg width="18" height="18" viewBox="0 0 24 24" fill="#e8e8e8" stroke="none" style="position:relative; top:2px;"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>';
-	}
+	});
 };
 
 // Apply dark mode immediately on load if preference is set
 chrome.storage.sync.get(["vtopDarkMode"], (result) => {
 	if (result.vtopDarkMode) {
 		applyDarkMode();
+		updateDarkToggleIcon(true);
 	}
 });
 
@@ -139,8 +150,8 @@ const hideNavbarClutter = () => {
 	const mainNav = document.querySelector("nav.navbar");
 	if (mainNav) {
 		mainNav.style.setProperty("min-height", "40px", "important");
-		mainNav.style.setProperty("padding-top", "0px", "important");
-		mainNav.style.setProperty("padding-bottom", "0px", "important");
+		mainNav.style.setProperty("padding-top", "6px", "important");
+		mainNav.style.setProperty("padding-bottom", "6px", "important");
 	}
 
 	const headerBarControl = document.getElementById("vtopHeaderBarControl");
@@ -237,8 +248,6 @@ const buildNavbar = (items_list) => {
 				target = allSidebar.find((a) => a.textContent.trim().toLowerCase().includes(lbl));
 			}
 			if (target) {
-				target.removeAttribute("onclick");
-				if (target.href && target.href.startsWith("javascript:")) target.removeAttribute("href");
 				target.dispatchEvent(new MouseEvent("click", { view: window, bubbles: true, cancelable: true, buttons: 1 }));
 			}
 		};
@@ -399,11 +408,6 @@ const buildNavbar = (items_list) => {
 			);
 
 			if (target) {
-				// Strip inline handlers to avoid CSP violations
-				target.removeAttribute("onclick");
-				if (target.href && target.href.startsWith("javascript:")) {
-					target.removeAttribute("href");
-				}
 				target.dispatchEvent(new MouseEvent("click", {
 					view: window,
 					bubbles: true,
