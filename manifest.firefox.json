@@ -38,6 +38,7 @@
 				"*://vtop.vit.ac.in/*",
 				"*://vtopcc.vit.ac.in/vtop/*"
 			],
+			"css": ["html/content.css"],
 			"js": [
 				"js/darkreader.js",
 				"js/attendance.js",

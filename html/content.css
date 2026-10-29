@@ -1,0 +1,130 @@
+/* Shared spacing for VTOP's Bootstrap layouts in both color modes. */
+html body :is(.card, .panel, .well) {
+    border-radius: 14px !important;
+    min-width: 0;
+}
+
+html body :is(.card-header, .panel-heading) {
+    padding: 14px 20px !important;
+    border-radius: 13px 13px 0 0 !important;
+    line-height: 1.5;
+}
+
+html body :is(.card-body, .panel-body, .well) {
+    padding: 18px 20px !important;
+}
+
+html body :is(.card-footer, .panel-footer) {
+    padding: 12px 20px !important;
+    border-radius: 0 0 13px 13px !important;
+}
+
+html body :is(.alert, .list-group-item) {
+    padding: 12px 16px !important;
+}
+
+html body .alert {
+    border-radius: 10px !important;
+}
+
+html body .alert-dismissible {
+    padding-right: 3rem !important;
+}
+
+html body :is(.btn, button:not(.btn-close), input[type="button"], input[type="submit"]) {
+    border-radius: 8px !important;
+    padding: 7px 12px !important;
+    min-height: 34px;
+    line-height: 1.4;
+}
+
+html body :is(.form-control, .form-select, select, textarea) {
+    border-radius: 8px !important;
+    padding: 8px 12px !important;
+}
+
+html body .form-select {
+    padding-right: 2.25rem !important;
+}
+
+html body :is(.card-body > table, #course-data table, #edu-status table) > :is(thead, tbody, tfoot) > tr > :is(th, td) {
+    padding: 10px 12px !important;
+    line-height: 1.5;
+}
+
+html body .card-body > .table-responsive {
+    border-radius: 8px;
+}
+
+/* Keep VTOP's menu handlers and Bootstrap positioning intact. */
+html body :is(#vtop-navbar, #vtop-navbar-cc) {
+    gap: 6px !important;
+    padding: 4px 8px !important;
+}
+
+html body :is(#vtop-navbar, #vtop-navbar-cc) > button {
+    flex-shrink: 0;
+    height: auto !important;
+    margin-left: 0 !important;
+}
+
+html body .navbar :is(.nav-link, .dropdown-toggle) {
+    padding: 8px 12px !important;
+    border-radius: 8px !important;
+    line-height: 1.5;
+}
+
+html body .dropdown-menu,
+html body #vtop-more-pins-menu {
+    padding: 10px !important;
+    border-radius: 12px !important;
+    max-width: calc(100vw - 24px);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12) !important;
+}
+
+html body .dropdown-menu .row {
+    margin: 0;
+    row-gap: 12px;
+}
+
+html body .dropdown-menu [class*="col-"] {
+    min-width: 0;
+    padding: 4px 8px;
+}
+
+html body :is(a[data-url], .dropdown-menu .dropdown-item, #vtop-more-pins-menu > div) {
+    display: block;
+    box-sizing: border-box;
+    padding: 10px 12px !important;
+    margin: 2px 0;
+    border-radius: 8px !important;
+    height: auto !important;
+    min-height: 38px;
+    line-height: 1.5 !important;
+    white-space: normal !important;
+    overflow-wrap: anywhere;
+    text-overflow: clip !important;
+    text-decoration: none;
+}
+
+html body :is(a[data-url], .dropdown-menu .dropdown-item, #vtop-more-pins-menu > div):is(:hover, :focus-visible),
+html body .navbar :is(.nav-link, .dropdown-toggle):is(:hover, :focus-visible) {
+    background-color: rgba(0, 0, 0, 0.06) !important;
+}
+
+html body .dropdown-header {
+    padding: 10px 12px !important;
+    font-size: 12px;
+    font-weight: 600;
+    white-space: normal;
+}
+
+@media (max-width: 640px) {
+    html body :is(.card-header, .panel-heading, .card-body, .panel-body, .card-footer, .panel-footer, .well) {
+        padding: 12px 14px !important;
+    }
+
+    html body :is(.card-body > table, #course-data table, #edu-status table) > :is(thead, tbody, tfoot) > tr > :is(th, td) {
+        padding: 8px 10px !important;
+    }
+}

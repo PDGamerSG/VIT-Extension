@@ -10,49 +10,59 @@ DarkReader.setFetchMethod(window.fetch.bind(window));
 
 const applyDarkMode = () => {
 	isDarkModeActive = true;
+	// Gruvbox Soft: warm surfaces, cream text, and muted amber accents.
 	DarkReader.enable({
 		brightness: 100,
 		contrast: 100,
 		sepia: 0,
-		darkSchemeBackgroundColor: "#111113",
-		darkSchemeTextColor: "#e4e4e7"
+		darkSchemeBackgroundColor: "#32302f",
+		darkSchemeTextColor: "#ebdbb2"
 	}, { css: `
 		:root { color-scheme: dark; }
-		body, html, #outer-wrap, #inner-wrap, .container, .container-fluid { background: #111113 !important; color: #e4e4e7 !important; }
-		nav.navbar, .navbar, .footercolor { background: #18181b !important; border-color: #303036 !important; box-shadow: none !important; }
-		.VTopHeaderStyle, .navbar-text, .navbar-text * { color: #e4e4e7 !important; }
-		html body .card, .panel, .panel-body, .tab-content, .tab-pane { background: #18181b !important; border-color: #303036 !important; box-shadow: none !important; }
-		html body .card-header { background: #202024 !important; color: #d4d4d8 !important; border-color: #303036 !important; }
-		.card-header .fw-bold, .card-header span.fs-6, .card-header h5 { color: #d4d4d8 !important; }
-		.card-body, .table { color: #e4e4e7 !important; }
-		thead th { background: #202024 !important; color: #a1a1aa !important; border-color: #303036 !important; }
-		tbody tr { background: #18181b !important; border-color: #303036 !important; }
-		tbody tr:nth-child(even) { background: #1c1c20 !important; }
-		tbody td { color: #d4d4d8 !important; border-color: #303036 !important; }
+		body, html, #outer-wrap, #inner-wrap, .container, .container-fluid { background: #32302f !important; color: #ebdbb2 !important; }
+		nav.navbar, .navbar, .footercolor { background: #3c3836 !important; border-color: #665c54 !important; box-shadow: none !important; }
+		.VTopHeaderStyle, .navbar-text, .navbar-text *, .vtop-nav-btn, #vtop-navbar-cc button, #vtop-more-pins-btn { color: #ebdbb2 !important; }
+		html body .card, .panel, .panel-body, .tab-content, .tab-pane { background: #3c3836 !important; border-color: #665c54 !important; box-shadow: none !important; }
+		html body .card-header { background: #504945 !important; color: #d5c4a1 !important; border-color: #665c54 !important; }
+		.card-header .fw-bold, .card-header span.fs-6, .card-header h5 { color: #d5c4a1 !important; }
+		.card-body, .table { color: #ebdbb2 !important; }
+		thead th { background: #504945 !important; color: #bdae93 !important; border-color: #665c54 !important; }
+		tbody tr { background: #3c3836 !important; border-color: #665c54 !important; }
+		tbody tr:nth-child(even) { background: #3c3836 !important; }
+		tbody td { color: #d5c4a1 !important; border-color: #665c54 !important; }
 		.form-control, select, .form-select, input[type="text"], input[type="password"], textarea {
-			background: #202024 !important; color: #e4e4e7 !important; border-color: #45454d !important;
+			background: #504945 !important; color: #ebdbb2 !important; border-color: #7c6f64 !important;
 		}
-		::placeholder { color: #a1a1aa !important; opacity: 1; }
-		.btn-primary { background: #27272a !important; border-color: #52525b !important; color: #fafafa !important; box-shadow: none !important; }
-		.btn-primary:hover { background: #3f3f46 !important; }
-		a:not(.vtop-nav-btn):not(.btn) { color: #a5b4fc !important; }
-		#vtop-more-pins-menu { background: #202024 !important; border-color: #3f3f46 !important; }
-		#vtop-more-pins-menu > div { color: #e4e4e7 !important; }
-		#vtop-more-pins-menu > div:hover { background: #303036 !important; }
-		#vit-ext-semester-filter > span { color: #a1a1aa !important; }
-		#vit-ext-semester-filter button { background: transparent !important; color: #d4d4d8 !important; border-color: #45454d !important; }
-		#vit-ext-semester-filter button[aria-pressed="true"] { background: #e4e4e7 !important; color: #18181b !important; border-color: #e4e4e7 !important; }
-		#vit-ext-semester-filter button:hover { border-color: #a1a1aa !important; }
+		::placeholder { color: #bdae93 !important; opacity: 1; }
+		.btn-primary { background: #504945 !important; border-color: #7c6f64 !important; color: #ebdbb2 !important; box-shadow: none !important; }
+		.btn-primary:hover { background: #665c54 !important; }
+		a:not(.vtop-nav-btn):not(.btn) { color: #d79921 !important; }
+		#vtop-more-pins-menu { background: #504945 !important; border-color: #665c54 !important; }
+		#vtop-more-pins-menu > div { color: #ebdbb2 !important; }
+		#vtop-more-pins-menu > div:hover { background: #665c54 !important; }
+		.dropdown-menu { background: #3c3836 !important; border-color: #665c54 !important; }
+		.dropdown-header { color: #bdae93 !important; }
+		a[data-url], .dropdown-menu .dropdown-item, .navbar .nav-link, .navbar .dropdown-toggle { color: #d5c4a1 !important; background: transparent !important; }
+		a[data-url] :is(i, svg), .dropdown-menu .dropdown-item :is(i, svg) { color: inherit !important; }
+		html body :is(a[data-url], .dropdown-menu .dropdown-item, #vtop-more-pins-menu > div):is(:hover, :focus-visible),
+		html body .navbar :is(.nav-link, .dropdown-toggle):is(:hover, :focus-visible, [aria-expanded="true"]) { background: #504945 !important; color: #ebdbb2 !important; }
+		#vit-ext-semester-filter > span { color: #bdae93 !important; }
+		#vit-ext-semester-filter button { background: transparent !important; color: #d5c4a1 !important; border-color: #7c6f64 !important; }
+		#vit-ext-semester-filter button[aria-pressed="true"] { background: #ebdbb2 !important; color: #3c3836 !important; border-color: #ebdbb2 !important; }
+		#vit-ext-semester-filter button:hover { border-color: #bdae93 !important; }
 		button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible {
-			outline: 2px solid #a5b4fc !important; outline-offset: 3px;
+			outline: 2px solid #d79921 !important; outline-offset: 3px;
 		}
-		#vit-ext-timetable table { background: #18181b !important; border-color: #303036 !important; box-shadow: none !important; }
-		#vit-ext-timetable th, #vit-ext-timetable td:first-child, #vit-ext-timetable td.is-lunch { background: #202024 !important; color: #a1a1aa !important; border-color: #303036 !important; }
-		#vit-ext-timetable td.has-class { background: #18181b !important; }
-		#vit-ext-timetable td.is-lab { background: #2a2025 !important; }
-		#vit-ext-timetable td.has-class:hover { background: #27272a !important; }
-		#vit-ext-timetable .tt-title, #vit-ext-timetable .course-name { color: #e4e4e7 !important; }
-		#vit-ext-timetable .course-venue, #vit-ext-timetable .legend { color: #a1a1aa !important; }
+		#vit-ext-timetable table { background: #3c3836 !important; border-color: #665c54 !important; box-shadow: none !important; }
+		#vit-ext-timetable th, #vit-ext-timetable td:first-child, #vit-ext-timetable td.is-lunch { background: #504945 !important; color: #bdae93 !important; border-color: #665c54 !important; }
+		#vit-ext-timetable td.has-class { background: #3c3836 !important; }
+		#vit-ext-timetable td.is-lab { background: #504945 !important; }
+		#vit-ext-timetable td.has-class:hover { background: #504945 !important; }
+		#vit-ext-timetable .type-theory { background: #504945 !important; color: #83a598 !important; }
+		#vit-ext-timetable .type-lab { background: #504945 !important; color: #d5c4a1 !important; }
+		#vit-ext-timetable .type-soft { background: #504945 !important; color: #bdae93 !important; }
+		#vit-ext-timetable .tt-title, #vit-ext-timetable .course-name { color: #ebdbb2 !important; }
+		#vit-ext-timetable .course-venue, #vit-ext-timetable .legend { color: #bdae93 !important; }
 	` });
 };
 
@@ -140,8 +150,8 @@ const hideNavbarClutter = () => {
 	const mainNav = document.querySelector("nav.navbar");
 	if (mainNav) {
 		mainNav.style.setProperty("min-height", "40px", "important");
-		mainNav.style.setProperty("padding-top", "0px", "important");
-		mainNav.style.setProperty("padding-bottom", "0px", "important");
+		mainNav.style.setProperty("padding-top", "6px", "important");
+		mainNav.style.setProperty("padding-bottom", "6px", "important");
 	}
 
 	const headerBarControl = document.getElementById("vtopHeaderBarControl");
