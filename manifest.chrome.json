@@ -48,16 +48,6 @@
 			]
 		}
 	],
-	"web_accessible_resources": [
-		{
-			"matches": [
-				"*://*.vit.ac.in/*"
-			],
-			"resources": [
-				"js/captcha/weights.json"
-			]
-		}
-	],
 	"action": {
 		"default_title": "VTop+",
 		"default_popup": "html/popup.html"

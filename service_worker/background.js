@@ -22,16 +22,11 @@ chrome.runtime.onMessage.addListener((request) => {
 });
 
 /* Sends a message to the content script */
-const returnMessage = (MessageToReturn) => {
-  chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
-    for (let tab of tabs) {
-      if (tab.url && tab.url.includes("vtop")) {
-        chrome.tabs.sendMessage(tab.id, {
-          message: MessageToReturn,
-        }).catch(() => { });
-        break;
-      }
-    }
+const returnMessage = (MessageToReturn, tabId) => {
+  if (tabId < 0) return;
+  chrome.tabs.sendMessage(tabId, { message: MessageToReturn }, () => {
+    // The tab may close or navigate before the content scripts are ready.
+    void chrome.runtime.lastError;
   });
 };
 
@@ -55,7 +50,7 @@ const trigger_download = (request) => {
 };
 
 // Change File Name for the file (Chrome only — Firefox doesn't support onDeterminingFilename)
-if (!IS_FIREFOX) chrome.downloads.onDeterminingFilename.addListener((item, suggest) => {
+if (chrome.downloads.onDeterminingFilename) chrome.downloads.onDeterminingFilename.addListener((item, suggest) => {
   if (
     item.url.includes("vtop.vit.ac.in") ||
     item.url.includes("vtopcc.vit.ac.in")
@@ -135,46 +130,46 @@ chrome.webRequest.onCompleted.addListener(
   async (details) => {
     let link = details["url"];
     if (link.indexOf("doStudentMarkView") !== -1) {
-      returnMessage("mark_view_page");
+      returnMessage("mark_view_page", details.tabId);
     } else if (
       link.indexOf("processViewStudentAttendance") !== -1 ||
       link.indexOf("processBackAttendanceDetails") !== -1
     ) {
-      returnMessage("view_attendance");
+      returnMessage("view_attendance", details.tabId);
     } else if (link.indexOf("menu.js") !== -1 || link.indexOf("home") !== -1) {
       if (link.indexOf("menu.js") !== -1) await sleep(500);
-      returnMessage("nav_bar_change");
+      returnMessage("nav_bar_change", details.tabId);
       if (link.indexOf("home") !== -1) {
         await sleep(500);
-        returnMessage("dashboard");
+        returnMessage("dashboard", details.tabId);
       }
     } else if (link.indexOf("processViewStudentCourseDetail") !== -1) {
-      returnMessage("course_page_change");
+      returnMessage("course_page_change", details.tabId);
     } else if (
       link.indexOf("doDigitalAssignment") !== -1 ||
       link.indexOf("sweetalert.min.js") != -1 ||
       link.indexOf("glyphicons-halflings-regular.woff2") != -1
     ) {
       await sleep(300);
-      returnMessage("da_upload");
+      returnMessage("da_upload", details.tabId);
     } else if (link.indexOf("vtopcc.vit.ac.in/vtop/vtopLogin") !== -1) {
-      returnMessage("vtopcc_captcha");
+      returnMessage("vtopcc_captcha", details.tabId);
     } else if (
       link.indexOf("vtop/doLogin") !== -1 ||
       link.indexOf("goHomePage") !== -1
     ) {
-      returnMessage("vtopcc_nav_bar");
-      returnMessage("dashboard");
+      returnMessage("vtopcc_nav_bar", details.tabId);
+      returnMessage("dashboard", details.tabId);
     } else if (link.indexOf("processViewTimeTable") !== -1) {
-      returnMessage("time_table");
+      returnMessage("time_table", details.tabId);
     } else if (link.indexOf("processStudExamSchedule") !== -1) {
       // Form submitted — results loaded
       await sleep(400);
-      returnMessage("exam_schedule");
+      returnMessage("exam_schedule", details.tabId);
     } else if (link.indexOf("StudExamSchedule") !== -1 && link.indexOf("process") === -1) {
       // Initial page navigation to exam schedule
       await sleep(800);
-      returnMessage("exam_schedule");
+      returnMessage("exam_schedule", details.tabId);
     }
   },
   {
